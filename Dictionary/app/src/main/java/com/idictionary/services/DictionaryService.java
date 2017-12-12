@@ -1,28 +1,13 @@
 package com.idictionary.services;
 
 import android.content.Context;
-import android.widget.Toast;
 
-
-import com.idictionary.Dictionary;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
-import com.loopj.android.http.RequestHandle;
 import com.loopj.android.http.RequestParams;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-
-import cz.msebera.android.httpclient.Header;
-
-//import com.loopj.android.http.AsyncHttpClient;
-//import com.loopj.android.http.JsonHttpResponseHandler;
-//import com.loopj.android.http.RequestParams;
 
 /**
  * Created by Rafsan on 11-Dec-17.

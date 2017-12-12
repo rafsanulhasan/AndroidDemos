@@ -1,37 +1,20 @@
 package com.idictionary;
 
 import android.Manifest;
-import android.annotation.TargetApi;
-import android.app.Activity;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.ArrayAdapter;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,11 +28,11 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.StampedLock;
 
 import cz.msebera.android.httpclient.Header;
 
-import static com.idictionary.R.*;
+import static com.idictionary.R.id;
+import static com.idictionary.R.layout;
 
 public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
@@ -95,8 +78,10 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             _dictionaryContent.setVisibility(View.VISIBLE);
             try {
                 _service = new DictionaryService(MainActivity.this);
-                final List<String>  meaningList = new ArrayList<>();
-                    //meaningList.add("no data");
+                final List<String> meaningList = new ArrayList<>();
+                MeaningListAdapter meaningListAdapter = new MeaningListAdapter(MainActivity.this, meaningList);
+                _exList.setAdapter(meaningListAdapter);
+                //meaningList.add("no data");
                 JsonHttpResponseHandler handler = new JsonHttpResponseHandler() {
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
@@ -116,11 +101,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                             }
 
                             //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
-                        }
-                        catch (JSONException e) {
+                        } catch (JSONException e) {
                             Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     }
@@ -131,10 +114,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                     }
                 };
                 _service.GetDefinition(searchText, handler);
-                MeaningListAdapter meaningListAdapter = new MeaningListAdapter(MainActivity.this, meaningList);
-                //ArrayAdapter<String> meaningListAdapter = new ArrayAdapter(this, layout.dic_list_item, meaningList);
-                _exList.setAdapter(meaningListAdapter);
-                //Toast.makeText(this, ""+ meaningList.isEmpty(), Toast.LENGTH_LONG ).show();
             }
             catch (Exception e) {
                 Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
@@ -187,6 +166,17 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 }
             }
         }
+    }
+
+    @Override
+    public boolean onNavigateUp() {
+        //return super.onNavigateUp();
+        if (_dictionaryContent.getVisibility() == View.VISIBLE)
+        {
+            _dictionaryContent.setVisibility(View.INVISIBLE);
+            _mainContent.setVisibility(View.VISIBLE);
+        }
+        return true;
     }
 }
 
