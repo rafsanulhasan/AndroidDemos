@@ -3,6 +3,7 @@ package com.idictionary;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -36,6 +37,8 @@ import static com.idictionary.R.layout;
 
 public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
+    public static final String TAG = "MainActivity";
+    private static final int REQUEST_INTERNET = 200;
     private MainActivity _mainActivity;
     private View _mainLayout;
     private View _mainContent;
@@ -46,9 +49,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private ListView _exList;
     private Button _btnSearch;
     private DictionaryService _service;
-
-    public static final String TAG = "MainActivity";
-    private static final int REQUEST_INTERNET = 200;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,56 +69,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         _btnSearch.setClickable(true);
         _exList = findViewById(id.exList);
 
-        this._btnSearch.setOnClickListener((View view) -> {
-
-            String searchText=_txtSearch.getText().toString();
-            _mainContent.setVisibility(View.INVISIBLE);
-            _lblSearchEdit.setText(searchText);
-            _txtSearchEdit.setText(searchText);
-            _dictionaryContent.setVisibility(View.VISIBLE);
-            try {
-                _service = new DictionaryService(MainActivity.this);
-                final List<String> meaningList = new ArrayList<>();
-                MeaningListAdapter meaningListAdapter = new MeaningListAdapter(MainActivity.this, meaningList);
-                _exList.setAdapter(meaningListAdapter);
-                //meaningList.add("no data");
-                JsonHttpResponseHandler handler = new JsonHttpResponseHandler() {
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                        // If the response is JSONObject instead of expected JSONArray
-                        try {
-                            final JSONArray definitions = response.getJSONArray("definitions");
-                            LinearLayout layout = findViewById(id.mList);
-                            for (int i = 0; i < definitions.length(); i++) {
-                                JSONObject def = definitions.getJSONObject(i);
-                                String d = def.getString("definition");
-                                meaningList.add(d);
-
-                                TextView tv = new TextView(MainActivity.this);
-                                //tv.setPadding(0, 5,0,5);
-                                //tv.setText(d);
-                                layout.addView(tv);
-                            }
-
-                            //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
-                        } catch (JSONException e) {
-                            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-                        } catch (Exception e) {
-                            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
-                        Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
-                    }
-                };
-                _service.GetDefinition(searchText, handler);
-            }
-            catch (Exception e) {
-                Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
+        this._btnSearch.setOnClickListener(this::ButtonClicked);
 
         _lblSearchEdit.setOnClickListener((View view)->{
             view.setVisibility(View.INVISIBLE);
@@ -153,30 +104,73 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == REQUEST_INTERNET) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            //if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 //start audio recording or whatever you planned to do
-            }else if (grantResults[0] == PackageManager.PERMISSION_DENIED){
+            //}
+            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.INTERNET)) {
                     //Show an explanation to the user *asynchronously*
                     ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.INTERNET}, REQUEST_INTERNET);
-                }else{
-                    //Never ask again and handle your app without permission.
                 }
+                //else{
+                    //Never ask again and handle your app without permission.
+                //}
             }
         }
     }
 
-    @Override
-    public boolean onNavigateUp() {
-        //return super.onNavigateUp();
-        if (_dictionaryContent.getVisibility() == View.VISIBLE)
-        {
-            _dictionaryContent.setVisibility(View.INVISIBLE);
-            _mainContent.setVisibility(View.VISIBLE);
+    private void OnSuccess(int statusCode, Header[] headers, JSONObject response, List<String> meaningList) {
+        try {
+            final JSONArray definitions = response.getJSONArray("definitions");
+            LinearLayout layout = findViewById(id.mList);
+            for (int i = 0; i < definitions.length(); i++) {
+                JSONObject def = definitions.getJSONObject(i);
+                String d = def.getString("definition");
+                meaningList.add(d);
+
+                TextView tv = new TextView(MainActivity.this);
+                //tv.setPadding(0, 5,0,5);
+                //tv.setText(d);
+                layout.addView(tv);
+            }
+
+            //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+        } catch (JSONException e) {
+            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
-        return true;
     }
+
+    private void ButtonClicked(View view) {
+        String searchText = _txtSearch.getText().toString();
+        _mainContent.setVisibility(View.INVISIBLE);
+        _lblSearchEdit.setText(searchText);
+        _txtSearchEdit.setText(searchText);
+        _dictionaryContent.setVisibility(View.VISIBLE);
+        try {
+            _service = new DictionaryService(MainActivity.this);
+            final List<String> meaningList = new ArrayList<>();
+            MeaningListAdapter meaningListAdapter = new MeaningListAdapter(MainActivity.this, meaningList);
+            _exList.setAdapter(meaningListAdapter);
+            //meaningList.add("no data");
+            JsonHttpResponseHandler handler = new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    // If the response is JSONObject instead of expected JSONArray
+                    OnSuccess(statusCode, headers, response, meaningList);
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
+                    Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+                }
+            };
+            _service.GetDefinition(searchText, handler);
+        } catch (Exception e) {
+            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
 }
 
