@@ -6,8 +6,6 @@ import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
-import com.android.gifLoader.GifImageView;
-
 /**
  * Created by Rafsan on 10-Dec-17.
  */

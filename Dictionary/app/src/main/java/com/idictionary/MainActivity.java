@@ -25,18 +25,29 @@ import android.view.MenuItem;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.idictionary.adapters.MeaningListAdapter;
 import com.idictionary.services.DictionaryService;
+import com.loopj.android.http.JsonHttpResponseHandler;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.StampedLock;
+
+import cz.msebera.android.httpclient.Header;
 
 import static com.idictionary.R.*;
 
@@ -55,7 +66,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     public static final String TAG = "MainActivity";
     private static final int REQUEST_INTERNET = 200;
-    private WebView htmlWebView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,24 +86,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         _btnSearch.setClickable(true);
         _exList = findViewById(id.exList);
 
-        ActionBar actionBar = getSupportActionBar();
-        if(null != actionBar){
-            actionBar.hide();
-        }
-
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_INTERNET);
-        }
-
-
-        htmlWebView = (WebView)findViewById(R.id.webView);
-        assert htmlWebView != null;
-        WebSettings webSetting = htmlWebView.getSettings();
-        webSetting.setJavaScriptEnabled(true);
-        webSetting.setDisplayZoomControls(true);
-        htmlWebView.setWebViewClient(new CustomWebViewClient());
-        htmlWebView.loadUrl("https://inducesmile.com/blog");
-
         this._btnSearch.setOnClickListener((View view) -> {
 
             String searchText=_txtSearch.getText().toString();
@@ -103,11 +95,46 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             _dictionaryContent.setVisibility(View.VISIBLE);
             try {
                 _service = new DictionaryService(MainActivity.this);
-                List<String> meaningList = new ArrayList<String>();
-                meaningList.add("no data");
-                //meaningList=_service.GetDefinition(searchText);
-                MeaningListAdapter meaningListAdapter = new MeaningListAdapter(this, meaningList);
+                final List<String>  meaningList = new ArrayList<>();
+                    //meaningList.add("no data");
+                JsonHttpResponseHandler handler = new JsonHttpResponseHandler() {
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                        // If the response is JSONObject instead of expected JSONArray
+                        try {
+                            final JSONArray definitions = response.getJSONArray("definitions");
+                            LinearLayout layout = findViewById(id.mList);
+                            for (int i = 0; i < definitions.length(); i++) {
+                                JSONObject def = definitions.getJSONObject(i);
+                                String d = def.getString("definition");
+                                meaningList.add(d);
+
+                                TextView tv = new TextView(MainActivity.this);
+                                //tv.setPadding(0, 5,0,5);
+                                //tv.setText(d);
+                                layout.addView(tv);
+                            }
+
+                            //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+                        }
+                        catch (JSONException e) {
+                            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                        catch (Exception e) {
+                            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
+                        Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+                    }
+                };
+                _service.GetDefinition(searchText, handler);
+                MeaningListAdapter meaningListAdapter = new MeaningListAdapter(MainActivity.this, meaningList);
+                //ArrayAdapter<String> meaningListAdapter = new ArrayAdapter(this, layout.dic_list_item, meaningList);
                 _exList.setAdapter(meaningListAdapter);
+                //Toast.makeText(this, ""+ meaningList.isEmpty(), Toast.LENGTH_LONG ).show();
             }
             catch (Exception e) {
                 Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
@@ -119,14 +146,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             _txtSearchEdit.setVisibility(View.VISIBLE);
         });
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        FloatingActionButton fab = findViewById(id.fab);
+        fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show());
     }
 
     @Override
@@ -164,13 +186,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                     //Never ask again and handle your app without permission.
                 }
             }
-        }
-    }
-    private class CustomWebViewClient extends WebViewClient {
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            view.loadUrl(url);
-            return true;
         }
     }
 }

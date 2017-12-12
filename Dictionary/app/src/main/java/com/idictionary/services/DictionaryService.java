@@ -4,6 +4,7 @@ import android.content.Context;
 import android.widget.Toast;
 
 
+import com.idictionary.Dictionary;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestHandle;
@@ -15,6 +16,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -40,49 +42,15 @@ public class DictionaryService {
         _sb = new StringBuilder(_baseUrl);
         _httpClient = new AsyncHttpClient();
         _params = new RequestParams();
-        this.setRequestParams();
+        _result = new ArrayList<>();
+        this.setRequestHeaders();
     }
 
-    public List<String> GetDefinition(String word) {
-        _result = new ArrayList<>();
+    public void GetDefinition(String word, JsonHttpResponseHandler jsonResponseHandler) {
+
         String url = this.populateUrl(word, "definitions");
-        Toast.makeText(_context, url, Toast.LENGTH_LONG).show();
 
-        RequestHandle requestHandle = _httpClient.get(url, _params, new JsonHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                // If the response is JSONObject instead of expected JSONArray
-                Toast.makeText(_context, statusCode, Toast.LENGTH_LONG).show();
-                try {
-                    final JSONArray definitions = response.getJSONArray("definitions");
-                    if (definitions.length() > 0) {
-                        for (int i = 0; i < definitions.length(); i++) {
-                            JSONObject def = definitions.getJSONObject(i);
-                            String d = definitions.get(i).toString();
-                            _result.add(d);
-                        }
-                    } else
-                        _result.add("no result");
-                    Toast.makeText(_context, response.toString(), Toast.LENGTH_LONG).show();
-
-                } catch (JSONException e) {
-                    Toast.makeText(_context, e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-                catch (Exception e) {
-                    Toast.makeText(_context, e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
-                Toast.makeText(_context, statusCode, Toast.LENGTH_LONG).show();
-            }
-        });
-
-        if (_result.isEmpty())
-            _result.add("no data");
-
-        return _result;
+        _httpClient.get(url, null, jsonResponseHandler);
     }
 
     private void append(String value) {
@@ -98,8 +66,8 @@ public class DictionaryService {
         return _sb.toString();
     }
 
-    private void setRequestParams() {
-        _params.put("X-Mashape-Key", "kVHOeIBNG5mshNUEh1WvWsQeGp1bp1UEVgtjsnFhd5lLiSnBgx");
-        _params.put("Accept", "application/json");
+    private void setRequestHeaders() {
+        _httpClient.addHeader("X-Mashape-Key", "kVHOeIBNG5mshNUEh1WvWsQeGp1bp1UEVgtjsnFhd5lLiSnBgx");
+        _httpClient.addHeader("Accept", "application/json");
     }
 }
