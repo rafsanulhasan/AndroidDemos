@@ -129,7 +129,7 @@ public class MainActivity
 
             @Override
             public void onUserException(Throwable error) {
-                String message = "userEx (" + error.getCause() + "): " + error.getMessage() + ". " + error.toString();
+                String message = "userEx (" + error.getCause() + "): " + error.getMessage();
                 configureData(message);
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
             }
@@ -254,7 +254,6 @@ public class MainActivity
                 searchText = _txtSearchEdit.getText().toString();
                 _txtSearch.setText(searchText);
                 _lblSearchEdit.setText(searchText);
-                _exList.setAdapter(_meaningListAdapter);
                 try {
                     _service = new DictionaryService(this);
                     _service.GetDefinition(searchText, _handler);
