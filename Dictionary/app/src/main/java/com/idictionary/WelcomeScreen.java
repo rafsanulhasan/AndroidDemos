@@ -11,20 +11,23 @@ public class WelcomeScreen extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.welcomescreen);
-        //GifImageView gifImageView = (GifImageView) findViewById(R.id.GifImageView);
-        //gifImageView.setGifImageResource(R.drawable.round_loader);
-        new Handler().postDelayed(()->{
-            Intent intent = new Intent(WelcomeScreen.this, MainActivity.class);
-            startActivity(intent);
-        }, 5000);
+        showMain();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        showMain(500);
+    }
+
+    private void showMain() {
+        showMain(5000);
+    }
+
+    private void showMain(@Nullable Integer milliSeconds) {
         new Handler().postDelayed(() -> {
             Intent intent = new Intent(WelcomeScreen.this, MainActivity.class);
             startActivity(intent);
-        }, 500);
+        }, milliSeconds == null ? 5000 : milliSeconds);
     }
 }
