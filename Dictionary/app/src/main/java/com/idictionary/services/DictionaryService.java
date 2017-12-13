@@ -6,7 +6,7 @@ import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -49,21 +49,13 @@ public class DictionaryService {
         }
 
         String url = this.populateUrl(word, "definitions");
+        Toast.makeText(_context, url, Toast.LENGTH_LONG).show();
         _httpClient.get(url, null, jsonResponseHandler);
     }
 
-    private void append(@NonNull String value) {
-        this.append(value, true);
-    }
-
-    private void append(@NonNull String value, @Nullable Boolean hasSlash) {
-        if (value.startsWith("/"))
-            value = value.substring(1, value.length() - 1);
-        if (value.endsWith("/"))
-            value = value.substring(0, value.length() - 2);
-        _sb.append(value);
-        if (hasSlash == null || hasSlash)
-            _sb.append("/");
+    private StringBuilder append(@NonNull String value) {
+        _sb.append("/").append(value);
+        return _sb;
     }
 
     private String populateUrl(String word, String operation) {
@@ -71,7 +63,7 @@ public class DictionaryService {
             this.append("words");
         }
         this.append(word);
-        this.append(operation, false);
+        this.append(operation);
         return _sb.toString();
     }
 
