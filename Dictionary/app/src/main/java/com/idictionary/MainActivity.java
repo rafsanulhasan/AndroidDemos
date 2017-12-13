@@ -38,7 +38,7 @@ import cz.msebera.android.httpclient.Header;
 import static com.idictionary.R.id;
 import static com.idictionary.R.layout;
 
-public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
+public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener {
 
     public static final String TAG = "MainActivity";
     private static final int REQUEST_INTERNET = 200;
@@ -51,7 +51,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private TextView _lblSearchEdit;
     private ListView _exList;
     private Button _btnSearch;
+    private Button _btnSearchEdit;
     private DictionaryService _service;
+    private JsonHttpResponseHandler _handler;
+    private List<String> _meaningList;
+    private MeaningListAdapter _meaningListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,19 +73,42 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         _lblSearchEdit = findViewById(id.lblSearchEdit);
         _txtSearchEdit = findViewById(id.txtSearchEdit);
         _btnSearch = findViewById(id.btnSearch);
+        _btnSearchEdit = findViewById(id.btnSearchEdit);
         _btnSearch.setClickable(true);
+        _btnSearchEdit.setClickable(true);
         _exList = findViewById(id.exList);
 
-        this._btnSearch.setOnClickListener(this::ButtonClicked);
+        _btnSearch.setOnClickListener(this);
+        _btnSearchEdit.setOnClickListener(this);
 
-        _lblSearchEdit.setOnClickListener((View view)->{
-            view.setVisibility(View.INVISIBLE);
-            _txtSearchEdit.setVisibility(View.VISIBLE);
-        });
+        _lblSearchEdit.setOnClickListener(this);
 
         FloatingActionButton fab = findViewById(id.fab);
         fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show());
+
+        _meaningList = new ArrayList<>();
+        _meaningListAdapter = new MeaningListAdapter(this, _meaningList);
+        _handler = new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                // If the response is JSONObject instead of expected JSONArray
+                OnSuccess(statusCode, headers, response, _meaningList, _meaningListAdapter);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
+                try {
+                    _meaningList.clear();
+                    _meaningList.add("no result");
+                    _meaningListAdapter.notifyDataSetChanged();
+                    Toast.makeText(MainActivity.this, response.getString("message"), Toast.LENGTH_LONG).show();
+                } catch (JSONException e) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        };
+        _exList.setAdapter(_meaningListAdapter);
     }
 
     @Override
@@ -205,6 +232,47 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void onClick(View view) {
+        String searchText;
+        switch (view.getId()) {
+            case id.btnSearch:
+                _mainContent.setVisibility(View.INVISIBLE);
+                searchText = _txtSearch.getText().toString();
+                _lblSearchEdit.setText(searchText);
+                _txtSearchEdit.setText(searchText);
+                _dictionaryContent.setVisibility(View.VISIBLE);
+                try {
+                    _service = new DictionaryService(MainActivity.this);
+                    _service.GetDefinition(searchText, _handler);
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+                break;
+            case id.btnSearchEdit:
+                _txtSearchEdit.setVisibility(View.INVISIBLE);
+                view.setVisibility(View.INVISIBLE);
+                _lblSearchEdit.setVisibility(View.VISIBLE);
+                searchText = _txtSearchEdit.getText().toString();
+                _txtSearch.setText(searchText);
+                _lblSearchEdit.setText(searchText);
+                _exList.setAdapter(_meaningListAdapter);
+                try {
+                    _service = new DictionaryService(this);
+                    _service.GetDefinition(searchText, _handler);
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+
+                break;
+            case id.lblSearchEdit:
+                view.setVisibility(View.INVISIBLE);
+                _txtSearchEdit.setVisibility(View.VISIBLE);
+                _btnSearchEdit.setVisibility(View.VISIBLE);
+                break;
+        }
     }
 }
 
