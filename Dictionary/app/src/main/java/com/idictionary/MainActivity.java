@@ -30,15 +30,20 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.nio.channels.ConnectionPendingException;
 import java.util.ArrayList;
 import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.conn.ConnectTimeoutException;
+import cz.msebera.android.httpclient.conn.HttpHostConnectException;
 
 import static com.idictionary.R.id;
 import static com.idictionary.R.layout;
 
-public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener {
+public class MainActivity
+        extends AppCompatActivity
+        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener {
 
     public static final String TAG = "MainActivity";
     private static final int REQUEST_INTERNET = 200;
@@ -98,14 +103,35 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
-                try {
-                    _meaningList.clear();
-                    _meaningList.add("no result");
-                    _meaningListAdapter.notifyDataSetChanged();
-                    Toast.makeText(MainActivity.this, response.getString("message"), Toast.LENGTH_LONG).show();
-                } catch (JSONException e) {
-                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-                }
+                if (throwable != null &&
+                        (throwable.getCause() instanceof ConnectTimeoutException ||
+                                throwable.getCause() instanceof HttpHostConnectException ||
+                                throwable.getCause() instanceof ConnectionPendingException)) {
+                    String message = "onFailure (other): " + throwable.getMessage();
+                    configureData(message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                } else
+                    try {
+                        String message = response.getString("message");
+                        configureData(message);
+                        //Toast.makeText(MainActivity.this, "onFailure ok: " + message, Toast.LENGTH_LONG).show();
+                    } catch (JSONException e) {
+                        Toast.makeText(MainActivity.this, "onfailure catch: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                String message = "onFailure (jsonarray): " + throwable.getMessage();
+                configureData(message);
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onUserException(Throwable error) {
+                String message = "userEx (" + error.getCause() + "): " + error.getMessage() + ". " + error.toString();
+                configureData(message);
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
             }
         };
         _exList.setAdapter(_meaningListAdapter);
@@ -137,7 +163,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == REQUEST_INTERNET) {
             //if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                //start audio recording or whatever you planned to do
+            //start audio recording or whatever you planned to do
             //}
             if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.INTERNET)) {
@@ -145,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                     ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.INTERNET}, REQUEST_INTERNET);
                 }
                 //else{
-                    //Never ask again and handle your app without permission.
+                //Never ask again and handle your app without permission.
                 //}
             }
         }
@@ -156,7 +182,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             final JSONArray definitions = response.getJSONArray("definitions");
             for (int i = 0; i < definitions.length(); i++) {
                 JSONObject def = definitions.getJSONObject(i);
-                String d = "(" + def.getString("partOfSpeech") + ") " + def.getString("definition");
+                String d = "";
+                if (def.getString("partOfSpeech") != null)
+                    d += "(" + def.getString("partOfSpeech") + ") ";
+                if (def.getString("definition") != null)
+                    d += def.getString("definition");
                 meaningList.add(d);
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -165,45 +195,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             meaningListAdapter.notifyDataSetChanged();
             //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
         } catch (JSONException e) {
-            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+            configureData(e);
+            Toast.makeText(MainActivity.this, "success: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
-    }
-
-    private void ButtonClicked(View view) {
-        String searchText = _txtSearch.getText().toString();
-        _mainContent.setVisibility(View.INVISIBLE);
-        _lblSearchEdit.setText(searchText);
-        _txtSearchEdit.setText(searchText);
-        _dictionaryContent.setVisibility(View.VISIBLE);
-        try {
-            _service = new DictionaryService(MainActivity.this);
-            final List<String> meaningList = new ArrayList<>();
-            MeaningListAdapter meaningListAdapter = new MeaningListAdapter(MainActivity.this, meaningList);
-            _exList.setAdapter(meaningListAdapter);
-            JsonHttpResponseHandler handler = new JsonHttpResponseHandler() {
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                    // If the response is JSONObject instead of expected JSONArray
-                    OnSuccess(statusCode, headers, response, meaningList, meaningListAdapter);
-                }
-
-                @Override
-                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
-                    try {
-                        meaningList.clear();
-                        meaningList.add("no result");
-                        meaningListAdapter.notifyDataSetChanged();
-                        Toast.makeText(MainActivity.this, response.getString("message"), Toast.LENGTH_LONG).show();
-                    } catch (JSONException e) {
-                        Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                }
-            };
-            _service.GetDefinition(searchText, handler);
-        } catch (Exception e) {
-            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-
     }
 
 
@@ -245,10 +239,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 _txtSearchEdit.setText(searchText);
                 _dictionaryContent.setVisibility(View.VISIBLE);
                 try {
-                    _service = new DictionaryService(MainActivity.this);
+                    _service = new DictionaryService(this);
                     _service.GetDefinition(searchText, _handler);
-                } catch (Exception e) {
+                } catch (HttpHostConnectException e) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 }
                 break;
             case id.btnSearchEdit:
@@ -262,6 +258,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 try {
                     _service = new DictionaryService(this);
                     _service.GetDefinition(searchText, _handler);
+                } catch (HttpHostConnectException e) {
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 } catch (Exception e) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                 }
@@ -273,6 +271,29 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 _btnSearchEdit.setVisibility(View.VISIBLE);
                 break;
         }
+    }
+
+    private void configureData(List<String> data) {
+        _meaningList = data;
+        _meaningListAdapter.notifyDataSetChanged();
+    }
+
+    private void configureData(Exception e) {
+        _meaningList.clear();
+        _meaningList.add(e.getMessage());
+        _meaningListAdapter.notifyDataSetChanged();
+    }
+
+    private void configureData(Throwable t) {
+        _meaningList.clear();
+        _meaningList.add(t.getMessage());
+        _meaningListAdapter.notifyDataSetChanged();
+    }
+
+    private void configureData(String s) {
+        _meaningList.clear();
+        _meaningList.add(s);
+        _meaningListAdapter.notifyDataSetChanged();
     }
 }
 
