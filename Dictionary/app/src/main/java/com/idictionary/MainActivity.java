@@ -1,6 +1,7 @@
 package com.idictionary;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -16,6 +17,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -43,7 +45,7 @@ import static com.idictionary.R.layout;
 
 public class MainActivity
         extends AppCompatActivity
-        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener {
+        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener, View.OnKeyListener {
 
     public static final String TAG = "MainActivity";
     private static final int REQUEST_INTERNET = 200;
@@ -87,6 +89,8 @@ public class MainActivity
         _btnSearchEdit.setOnClickListener(this);
 
         _lblSearchEdit.setOnClickListener(this);
+        _txtSearch.setOnKeyListener(this);
+        _txtSearchEdit.setOnKeyListener(this);
 
         FloatingActionButton fab = findViewById(id.fab);
         fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
@@ -293,6 +297,31 @@ public class MainActivity
         _meaningList.clear();
         _meaningList.add(s);
         _meaningListAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        switch (view.getId()) {
+            case id.txtSearch:
+                if (keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                    onClick(_btnSearch);
+
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    return true;
+                }
+                break;
+            case id.txtSearchEdit:
+                if (keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                    onClick(_btnSearchEdit);
+
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    return true;
+                }
+                break;
+        }
+
+        return false;
     }
 }
 
