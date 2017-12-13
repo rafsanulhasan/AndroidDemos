@@ -6,10 +6,6 @@ import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
-/**
- * Created by Rafsan on 10-Dec-17.
- */
-
 public class WelcomeScreen extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -21,5 +17,14 @@ public class WelcomeScreen extends AppCompatActivity {
             Intent intent = new Intent(WelcomeScreen.this, MainActivity.class);
             startActivity(intent);
         }, 5000);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        new Handler().postDelayed(() -> {
+            Intent intent = new Intent(WelcomeScreen.this, MainActivity.class);
+            startActivity(intent);
+        }, 500);
     }
 }

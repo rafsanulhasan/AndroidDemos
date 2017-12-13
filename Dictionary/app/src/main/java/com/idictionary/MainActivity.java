@@ -3,6 +3,7 @@ package com.idictionary;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -131,6 +132,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 String d = "(" + def.getString("partOfSpeech") + ") " + def.getString("definition");
                 meaningList.add(d);
             }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                meaningList.sort(String::compareTo);
+            }
             meaningListAdapter.notifyDataSetChanged();
             //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
         } catch (JSONException e) {
@@ -175,17 +179,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if ((keyCode == KeyEvent.KEYCODE_BACK)
-                && (event.getRepeatCount() == 0)) {
-            Log.d("CDA", "onKeyDown Called");
-            onBackPressed();
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
-
 
     @Override
     public void onBackPressed() {
@@ -201,6 +194,17 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             _dictionaryContent.setVisibility(View.GONE);
             _mainContent.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)
+                && (event.getRepeatCount() == 0)) {
+            Log.d("CDA", "onKeyDown Called");
+            onBackPressed();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }
 
