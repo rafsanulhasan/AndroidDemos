@@ -4,7 +4,8 @@
     <string name="title_activity_dictionary">Meaning</string>
     <string name="permissions_not_granted">Permissions were not granted.</string>
     <string name="permission_internet_rationale">Internet permission is needed to show the camera preview.</string>
-    <string name="permision_available_internet">Internet Permission has been granted. Preview can now be opened.</string>
-    <string name="ok">Ok</string>
+    <string name="permission_available_internet">Internet Permission has been granted. Preview can now be opened.</string>
+    <string name="ok">OK</string>
     <string name="yes">Yes</string>
+    <string name="enterWord">Enter Word</string>
 </resources>
