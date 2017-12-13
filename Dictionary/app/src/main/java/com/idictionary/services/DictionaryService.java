@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import cz.msebera.android.httpclient.HttpHost;
 import cz.msebera.android.httpclient.conn.HttpHostConnectException;
 
 
@@ -44,7 +43,7 @@ public class DictionaryService {
 
     public void GetDefinition(@NonNull String word, JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException {
         if (!isNetworkOnline()) {
-            throw new HttpHostConnectException(new IOException("No Internet Connection"), new HttpHost(_baseUrl, 443));
+            throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
         }
 
         String url = this.populateUrl(word, "definitions");
