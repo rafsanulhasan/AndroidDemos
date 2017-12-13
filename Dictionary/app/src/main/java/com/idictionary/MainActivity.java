@@ -1,6 +1,7 @@
 package com.idictionary;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -9,6 +10,8 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -156,6 +159,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
                     try {
+                        meaningList.clear();
+                        meaningList.add("no result");
+                        meaningListAdapter.notifyDataSetChanged();
                         Toast.makeText(MainActivity.this, response.getString("message"), Toast.LENGTH_LONG).show();
                     } catch (JSONException e) {
                         Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
@@ -163,12 +169,38 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 }
             };
             _service.GetDefinition(searchText, handler);
-            if (meaningList.size() == 0)
-                meaningList.add("no result");
         } catch (Exception e) {
             Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
+
     }
 
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)
+                && (event.getRepeatCount() == 0)) {
+            Log.d("CDA", "onKeyDown Called");
+            onBackPressed();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        Log.d("CDA", "onBackPressed Called");
+        if (_mainContent.getVisibility() == View.VISIBLE) {
+            finish();
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
+        if (_dictionaryContent.getVisibility() == View.VISIBLE) {
+            _dictionaryContent.setVisibility(View.GONE);
+            _mainContent.setVisibility(View.VISIBLE);
+        }
+    }
 }
 
