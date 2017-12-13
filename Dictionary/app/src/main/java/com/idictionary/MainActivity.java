@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -35,6 +36,7 @@ import org.json.JSONObject;
 import java.nio.channels.ConnectionPendingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.conn.ConnectTimeoutException;
@@ -45,7 +47,7 @@ import static com.idictionary.R.layout;
 
 public class MainActivity
         extends AppCompatActivity
-        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener, View.OnKeyListener {
+        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener, View.OnKeyListener, TextToSpeech.OnInitListener {
 
     public static final String TAG = "MainActivity";
     private static final int REQUEST_INTERNET = 200;
@@ -59,10 +61,12 @@ public class MainActivity
     private ListView _exList;
     private Button _btnSearch;
     private Button _btnSearchEdit;
+    private Button _btnSpeak;
     private DictionaryService _service;
     private JsonHttpResponseHandler _handler;
     private List<String> _meaningList;
     private MeaningListAdapter _meaningListAdapter;
+    private TextToSpeech _tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,12 +85,16 @@ public class MainActivity
         _txtSearchEdit = findViewById(id.txtSearchEdit);
         _btnSearch = findViewById(id.btnSearch);
         _btnSearchEdit = findViewById(id.btnSearchEdit);
+        _btnSpeak = findViewById(id.btnSpeak);
         _btnSearch.setClickable(true);
         _btnSearchEdit.setClickable(true);
         _exList = findViewById(id.exList);
 
+        _tts = new TextToSpeech(this, this);
+
         _btnSearch.setOnClickListener(this);
         _btnSearchEdit.setOnClickListener(this);
+        _btnSpeak.setOnClickListener(this);
 
         _lblSearchEdit.setOnClickListener(this);
         _txtSearch.setOnKeyListener(this);
@@ -235,6 +243,7 @@ public class MainActivity
     @Override
     public void onClick(View view) {
         String searchText;
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         switch (view.getId()) {
             case id.btnSearch:
                 _mainContent.setVisibility(View.INVISIBLE);
@@ -245,6 +254,7 @@ public class MainActivity
                 try {
                     _service = new DictionaryService(this);
                     _service.GetDefinition(searchText, _handler);
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 } catch (HttpHostConnectException e) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                 } catch (Exception e) {
@@ -254,13 +264,16 @@ public class MainActivity
             case id.btnSearchEdit:
                 _txtSearchEdit.setVisibility(View.INVISIBLE);
                 view.setVisibility(View.INVISIBLE);
+                _btnSpeak.setVisibility(View.VISIBLE);
                 _lblSearchEdit.setVisibility(View.VISIBLE);
                 searchText = _txtSearchEdit.getText().toString();
                 _txtSearch.setText(searchText);
                 _lblSearchEdit.setText(searchText);
                 try {
                     _service = new DictionaryService(this);
+                    _meaningList.clear();
                     _service.GetDefinition(searchText, _handler);
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 } catch (HttpHostConnectException e) {
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 } catch (Exception e) {
@@ -268,10 +281,14 @@ public class MainActivity
                 }
 
                 break;
+            case id.btnSpeak:
+                this.speakOut(_lblSearchEdit.getText().toString());
+                break;
             case id.lblSearchEdit:
                 view.setVisibility(View.INVISIBLE);
                 _txtSearchEdit.setVisibility(View.VISIBLE);
                 _btnSearchEdit.setVisibility(View.VISIBLE);
+                _btnSpeak.setVisibility(View.INVISIBLE);
                 break;
         }
     }
@@ -301,27 +318,48 @@ public class MainActivity
 
     @Override
     public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         switch (view.getId()) {
             case id.txtSearch:
                 if (keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     onClick(_btnSearch);
-
-                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                     return true;
                 }
                 break;
             case id.txtSearchEdit:
                 if (keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     onClick(_btnSearchEdit);
-
-                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                     return true;
                 }
                 break;
         }
 
         return false;
+    }
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+
+            int result = _tts.setLanguage(Locale.US);
+
+            if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Toast.makeText(this, "This Language is not supported", Toast.LENGTH_LONG).show();
+            } else {
+                _btnSpeak.setClickable(true);
+                _btnSpeak.setEnabled(true);
+            }
+
+        } else {
+            Toast.makeText(this, "Initilization Failed!", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void speakOut(String text) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+            _tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+        else
+            _tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
     }
 }
 
