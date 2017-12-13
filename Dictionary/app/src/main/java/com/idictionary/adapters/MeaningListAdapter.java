@@ -13,43 +13,39 @@ import android.widget.TextView;
 
 import com.idictionary.R;
 
-import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Created by Rafsan on 11-Dec-17.
- */
 
 public class MeaningListAdapter extends ArrayAdapter<String> {
     private final Activity _activity;
     private final Context _context;
     private List<String> _meaningList;
+    private LayoutInflater _inflater;
+    private View _rowView;
+    private LinearLayout _layout;
 
-    public MeaningListAdapter(@NonNull Activity activity, List<String> meaningList) {
+    public MeaningListAdapter(@NonNull Activity activity, @NonNull List<String> meaningList) {
         super(activity, R.layout.content_dictionary, meaningList);
         _activity = activity;
         _context = activity;
-        if (meaningList == null) {
-            meaningList = new ArrayList<>();
-            meaningList.add("no result");
-        }
         this._meaningList = meaningList;
     }
+
+    @SuppressLint({"ViewHolder", "InflateParams"})
+    @NonNull
     @Override
-    public View getView(int position, View view, ViewGroup parent) {
-        LayoutInflater inflater = _activity.getLayoutInflater();
-        @SuppressLint("ViewHolder") View rowView = inflater.inflate(R.layout.dic_list_item, null, false);
+    public View getView(int position, View view, @NonNull ViewGroup parent) {
+        _inflater = _activity.getLayoutInflater();
+        _rowView = _inflater.inflate(R.layout.dic_list_item, null, false);
 
         //this code gets references to objects in the listview_row.xml file
-        LinearLayout layout = rowView.findViewById(R.id.dic_list);
+        _layout = _rowView.findViewById(R.id.dic_list);
+
         TextView meaningTextField = new TextView(_context);
-        //TextView meaningTextField = rowView.findViewById(R.id.txtMeaning);
         meaningTextField.setPadding(0, 5, 0, 5);
         //this code sets the values of the objects to values from the arrays
         meaningTextField.setText(_meaningList.get(position));
-        meaningTextField.setVisibility(View.VISIBLE);
-        layout.addView(meaningTextField);
-        return rowView;
+        _layout.addView(meaningTextField);
+        return _rowView;
 
     }
 }

@@ -14,7 +14,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -121,21 +120,15 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         }
     }
 
-    private void OnSuccess(int statusCode, Header[] headers, JSONObject response, List<String> meaningList) {
+    private void OnSuccess(int statusCode, Header[] headers, JSONObject response, List<String> meaningList, MeaningListAdapter meaningListAdapter) {
         try {
             final JSONArray definitions = response.getJSONArray("definitions");
-            LinearLayout layout = findViewById(id.mList);
             for (int i = 0; i < definitions.length(); i++) {
                 JSONObject def = definitions.getJSONObject(i);
                 String d = "(" + def.getString("partOfSpeech") + ") " + def.getString("definition");
                 meaningList.add(d);
-
-                TextView tv = new TextView(MainActivity.this);
-                //tv.setPadding(0, 5,0,5);
-                //tv.setText(d);
-                layout.addView(tv);
             }
-
+            meaningListAdapter.notifyDataSetChanged();
             //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
         } catch (JSONException e) {
             Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
@@ -153,20 +146,25 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             final List<String> meaningList = new ArrayList<>();
             MeaningListAdapter meaningListAdapter = new MeaningListAdapter(MainActivity.this, meaningList);
             _exList.setAdapter(meaningListAdapter);
-            //meaningList.add("no data");
             JsonHttpResponseHandler handler = new JsonHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                     // If the response is JSONObject instead of expected JSONArray
-                    OnSuccess(statusCode, headers, response, meaningList);
+                    OnSuccess(statusCode, headers, response, meaningList, meaningListAdapter);
                 }
 
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
-                    Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+                    try {
+                        Toast.makeText(MainActivity.this, response.getString("message"), Toast.LENGTH_LONG).show();
+                    } catch (JSONException e) {
+                        Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 }
             };
             _service.GetDefinition(searchText, handler);
+            if (meaningList.size() == 0)
+                meaningList.add("no result");
         } catch (Exception e) {
             Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
