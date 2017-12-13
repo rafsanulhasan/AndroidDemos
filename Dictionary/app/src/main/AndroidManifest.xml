@@ -3,8 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.idictionary">
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="26" android:maxSdkVersion="27"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
