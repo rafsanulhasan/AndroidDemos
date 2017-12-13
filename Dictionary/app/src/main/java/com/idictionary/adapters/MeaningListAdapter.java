@@ -42,6 +42,7 @@ public class MeaningListAdapter extends ArrayAdapter<String> {
 
         TextView meaningTextField = new TextView(_context);
         meaningTextField.setPadding(0, 5, 0, 5);
+        meaningTextField.setMaxEms(10000);
         //this code sets the values of the objects to values from the arrays
         meaningTextField.setText(_meaningList.get(position));
         _layout.addView(meaningTextField);
