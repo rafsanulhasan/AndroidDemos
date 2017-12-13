@@ -6,7 +6,6 @@ import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -49,7 +48,6 @@ public class DictionaryService {
         }
 
         String url = this.populateUrl(word, "definitions");
-        Toast.makeText(_context, url, Toast.LENGTH_LONG).show();
         _httpClient.get(url, null, jsonResponseHandler);
     }
 
