@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             LinearLayout layout = findViewById(id.mList);
             for (int i = 0; i < definitions.length(); i++) {
                 JSONObject def = definitions.getJSONObject(i);
-                String d = def.getString("definition");
+                String d = "(" + def.getString("partOfSpeech") + ") " + def.getString("definition");
                 meaningList.add(d);
 
                 TextView tv = new TextView(MainActivity.this);
