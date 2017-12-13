@@ -17,17 +17,17 @@ public class WelcomeScreen extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        showMain(500);
+        showMain(200);
     }
 
     private void showMain() {
-        showMain(5000);
+        showMain(500);
     }
 
     private void showMain(@Nullable Integer milliSeconds) {
         new Handler().postDelayed(() -> {
             Intent intent = new Intent(WelcomeScreen.this, MainActivity.class);
             startActivity(intent);
-        }, milliSeconds == null ? 5000 : milliSeconds);
+        }, milliSeconds == null ? 500 : milliSeconds);
     }
 }
