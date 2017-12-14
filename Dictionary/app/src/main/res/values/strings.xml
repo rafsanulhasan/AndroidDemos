@@ -8,4 +8,7 @@
     <string name="ok">OK</string>
     <string name="yes">Yes</string>
     <string name="enterWord">Enter Word</string>
+    <string name="speak">Speak</string>
+    <string name="definitions">Definitions</string>
+    <string name="search">Search</string>
 </resources>
