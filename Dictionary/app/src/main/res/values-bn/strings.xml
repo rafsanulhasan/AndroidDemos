@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">অভিধান</string>
+    <string name="action_settings">সেটিংস</string>
+    <string name="title_activity_dictionary">অর্থ</string>
+    <string name="permissions_not_granted">অনুমতি দেওয়া হয়নি।</string>
+    <string name="permission_internet_rationale">ইন্টারনেট অ্যাক্সেস করার জন্য ইন্টারনেটের অনুমতি প্রয়োজন।</string>
+    <string name="permission_available_internet">ইন্টারনেটের অনুমতি দেওয়া হয়েছে। আপনি এখন ইন্টারনেট অ্যাক্সেস করতে পারেন ।</string>
+    <string name="ok">ঠিক আছে</string>
+    <string name="yes">আচ্ছা!</string>
+    <string name="enterWord">শব্দ প্রবেশ করুন</string>
+    <string name="speak">উচ্চারণ করুন</string>
+    <string name="definitions">অর্থসমূহ</string>
+    <string name="search">অনুসন্ধান করুন</string>
+</resources>
