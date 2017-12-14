@@ -128,7 +128,7 @@
                     android:orientation="vertical">
 
                     <ListView
-                        android:id="@+id/exList"
+                        android:id="@+id/defList"
                         style="@style/Widget.AppCompat.ListView"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
