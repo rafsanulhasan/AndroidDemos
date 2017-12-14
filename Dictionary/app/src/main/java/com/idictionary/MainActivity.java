@@ -22,6 +22,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -67,6 +68,7 @@ public class MainActivity
     private List<String> _meaningList;
     private MeaningListAdapter _meaningListAdapter;
     private TextToSpeech _tts;
+    private ProgressBar _dictLoadProgress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +91,8 @@ public class MainActivity
         _btnSearch.setClickable(true);
         _btnSearchEdit.setClickable(true);
         _exList = findViewById(id.exList);
+        _dictLoadProgress = findViewById(id.dictLoadProgress);
+        _dictLoadProgress.setProgress(0);
 
         _tts = new TextToSpeech(this, this);
 
@@ -137,6 +141,34 @@ public class MainActivity
                 String message = "onFailure (jsonarray): " + throwable.getMessage();
                 configureData(message);
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onFinish() {
+                super.onFinish();
+                _dictLoadProgress.setVisibility(View.INVISIBLE);
+                _exList.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onProgress(long bytesWritten, long totalSize) {
+                //super.onProgress(bytesWritten, totalSize);
+                Integer bytesWrittenInt = Integer.parseInt(Long.toString(bytesWritten));
+                Integer totalSizeInt = Integer.parseInt(Long.toString(totalSize));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    _dictLoadProgress.setMin(bytesWrittenInt);
+                    _dictLoadProgress.setMax(totalSizeInt);
+                }
+                _dictLoadProgress.setProgress(bytesWrittenInt);
+
+                //String.format("Progress %d from %d (%2.0f%%)", bytesWritten, totalSize, (totalSize > 0) ? (bytesWritten * 1.0 / totalSize) * 100 : -1)l
+            }
+
+            @Override
+            public void onStart() {
+                super.onStart();
+                _dictLoadProgress.setVisibility(View.VISIBLE);
+                _exList.setVisibility(View.INVISIBLE);
             }
 
             @Override
