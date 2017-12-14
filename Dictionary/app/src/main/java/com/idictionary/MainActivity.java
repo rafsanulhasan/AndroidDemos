@@ -262,13 +262,16 @@ public class MainActivity
                 }
                 break;
             case id.btnSearchEdit:
+                searchText = _txtSearchEdit.getText().toString();
+
                 _txtSearchEdit.setVisibility(View.INVISIBLE);
                 view.setVisibility(View.INVISIBLE);
+
                 _btnSpeak.setVisibility(View.VISIBLE);
                 _lblSearchEdit.setVisibility(View.VISIBLE);
-                searchText = _txtSearchEdit.getText().toString();
-                _txtSearch.setText(searchText);
+
                 _lblSearchEdit.setText(searchText);
+                _txtSearch.setText(searchText);
                 try {
                     _service = new DictionaryService(this);
                     _meaningList.clear();
@@ -287,6 +290,7 @@ public class MainActivity
             case id.lblSearchEdit:
                 view.setVisibility(View.INVISIBLE);
                 _txtSearchEdit.setVisibility(View.VISIBLE);
+                _txtSearchEdit.onHoverChanged(true);
                 _btnSearchEdit.setVisibility(View.VISIBLE);
                 _btnSpeak.setVisibility(View.INVISIBLE);
                 break;

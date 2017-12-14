@@ -35,17 +35,18 @@ public class MeaningListAdapter extends ArrayAdapter<String> {
     @Override
     public View getView(int position, View view, @NonNull ViewGroup parent) {
         _inflater = _activity.getLayoutInflater();
-        _rowView = _inflater.inflate(R.layout.dic_list_item, null, false);
+        _rowView = _inflater.inflate(R.layout.dic_result_row, null, false);
 
         //this code gets references to objects in the listview_row.xml file
-        _layout = _rowView.findViewById(R.id.dic_list);
+        //_layout = _rowView.findViewById(R.id.dic_list);
 
-        TextView meaningTextField = new TextView(_context);
-        meaningTextField.setPadding(0, 5, 0, 5);
-        meaningTextField.setMaxEms(10000);
+        //TextView meaningTextField = new TextView(_context);
+        //meaningTextField.setPadding(0, 5, 0, 5);
+        //meaningTextField.setMaxEms(10000);
+        TextView meaningTextField = _rowView.findViewById(R.id.txtDefinition);
         //this code sets the values of the objects to values from the arrays
         meaningTextField.setText(_meaningList.get(position));
-        _layout.addView(meaningTextField);
+        //_layout.addView(meaningTextField);
         return _rowView;
 
     }
