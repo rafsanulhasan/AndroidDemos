@@ -23,6 +23,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -69,6 +70,7 @@ public class MainActivity
     private MeaningListAdapter _meaningListAdapter;
     private TextToSpeech _tts;
     private ProgressBar _dictLoadProgress;
+    private TabHost _dicResultTab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +95,7 @@ public class MainActivity
         _exList = findViewById(id.exList);
         _dictLoadProgress = findViewById(id.dictLoadProgress);
         _dictLoadProgress.setProgress(0);
+        _dicResultTab = findViewById(id.dicResultTab);
 
         _tts = new TextToSpeech(this, this);
 
@@ -103,6 +106,28 @@ public class MainActivity
         _lblSearchEdit.setOnClickListener(this);
         _txtSearch.setOnKeyListener(this);
         _txtSearchEdit.setOnKeyListener(this);
+
+        _dicResultTab.setup();
+
+        TabHost.TabSpec definitionsTab = _dicResultTab.newTabSpec("Meanings");
+        definitionsTab.setContent(id.dicDefTab);
+        definitionsTab.setIndicator("Meaning");
+        _dicResultTab.addTab(definitionsTab);
+
+        TabHost.TabSpec synTab = _dicResultTab.newTabSpec("Synonyms");
+        synTab.setContent(id.dicSynTab);
+        synTab.setIndicator("Synonym");
+        _dicResultTab.addTab(synTab);
+
+        TabHost.TabSpec antTab = _dicResultTab.newTabSpec("Antonyms");
+        antTab.setContent(id.dicAntTab);
+        antTab.setIndicator("Antonym");
+        _dicResultTab.addTab(antTab);
+
+        TabHost.TabSpec exampleTab = _dicResultTab.newTabSpec("Examples");
+        exampleTab.setContent(id.dicExTab);
+        exampleTab.setIndicator("Example");
+        _dicResultTab.addTab(exampleTab);
 
         FloatingActionButton fab = findViewById(id.fab);
         fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
