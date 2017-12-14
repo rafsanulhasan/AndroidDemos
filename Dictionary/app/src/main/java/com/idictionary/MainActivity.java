@@ -60,7 +60,7 @@ public class MainActivity
     private EditText _txtSearch;
     private EditText _txtSearchEdit;
     private TextView _lblSearchEdit;
-    private ListView _exList;
+    private ListView _defList;
     private Button _btnSearch;
     private Button _btnSearchEdit;
     private Button _btnSpeak;
@@ -92,7 +92,7 @@ public class MainActivity
         _btnSpeak = findViewById(id.btnSpeak);
         _btnSearch.setClickable(true);
         _btnSearchEdit.setClickable(true);
-        _exList = findViewById(id.exList);
+        _defList = findViewById(id.defList);
         _dictLoadProgress = findViewById(id.dictLoadProgress);
         _dictLoadProgress.setProgress(0);
         _dicResultTab = findViewById(id.dicResultTab);
@@ -172,7 +172,7 @@ public class MainActivity
             public void onFinish() {
                 super.onFinish();
                 _dictLoadProgress.setVisibility(View.INVISIBLE);
-                _exList.setVisibility(View.VISIBLE);
+                _defList.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -193,7 +193,7 @@ public class MainActivity
             public void onStart() {
                 super.onStart();
                 _dictLoadProgress.setVisibility(View.VISIBLE);
-                _exList.setVisibility(View.INVISIBLE);
+                _defList.setVisibility(View.INVISIBLE);
             }
 
             @Override
@@ -203,7 +203,7 @@ public class MainActivity
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
             }
         };
-        _exList.setAdapter(_meaningListAdapter);
+        _defList.setAdapter(_meaningListAdapter);
     }
 
     @Override
@@ -311,11 +311,10 @@ public class MainActivity
                 try {
                     _service = new DictionaryService(this);
                     _service.GetDefinition(searchText, _handler);
-                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    if (imm != null)
+                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 } catch (HttpHostConnectException e) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-                } catch (Exception e) {
-                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 }
                 break;
             case id.btnSearchEdit:
@@ -333,7 +332,8 @@ public class MainActivity
                     _service = new DictionaryService(this);
                     _meaningList.clear();
                     _service.GetDefinition(searchText, _handler);
-                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    if (imm != null)
+                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 } catch (HttpHostConnectException e) {
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 } catch (Exception e) {
