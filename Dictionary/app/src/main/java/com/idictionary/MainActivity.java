@@ -198,7 +198,7 @@ public class MainActivity
             if (adapter instanceof MeaningListAdapter) {
                 final JSONArray definitions = response.getJSONArray("definitions");
                 for (int i = 0; i < definitions.length(); i++) {
-                    JSONObject def = null;
+                    JSONObject def;
                     try {
                         def = definitions.getJSONObject(i);
                         String d = "";
@@ -274,8 +274,29 @@ public class MainActivity
                 _txtSearchEdit.setText(searchText);
                 _dictionaryContent.setVisibility(View.VISIBLE);
                 try {
+                    String currentTabTag = _dicResultTab.getCurrentTabTag();
                     _service = new DictionaryService(this);
-                    _service.GetDefinition(searchText, _defHandler);
+                    if (currentTabTag != null) {
+                        switch (currentTabTag) {
+                            case "Meaning":
+                                _defList.clear();
+                                _service.GetDefinition(searchText, _defHandler);
+                                break;
+                            case "Synonym":
+                                _synList.clear();
+                                _service.GetSynonym(searchText, _synHandler);
+                                break;
+                            case "Antonym":
+                                _antList.clear();
+                                _service.GetAntonym(searchText, _antHandler);
+                                break;
+                            case "Example":
+                                _exampleList.clear();
+                                _service.GetExample(searchText, _exampleHandler);
+                                break;
+                        }
+                    }
+                    _dicResultTab.setCurrentTab(_dicResultTab.getCurrentTab());
                     if (imm != null)
                         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 } catch (HttpHostConnectException e) {
@@ -294,20 +315,29 @@ public class MainActivity
                 _lblSearchEdit.setText(searchText);
                 _txtSearch.setText(searchText);
                 try {
+                    String currentTabTag = _dicResultTab.getCurrentTabTag();
                     _service = new DictionaryService(this);
-                    if (_dicResultTab.getCurrentTabTag().equals("Meaning")) {
-                        _defList.clear();
-                        _service.GetDefinition(searchText, _defHandler);
-                    } else if (_dicResultTab.getCurrentTabTag().equals("Synonym")) {
-                        _synList.clear();
-                        _service.GetSynonym(searchText, _synHandler);
-                    } else if (_dicResultTab.getCurrentTabTag().equals("Antonym")) {
-                        _synList.clear();
-                        _service.GetAntonym(searchText, _antHandler);
-                    } else if (_dicResultTab.getCurrentTabTag().equals("Example")) {
-                        _synList.clear();
-                        _service.GetExample(searchText, _exampleHandler);
+                    if (currentTabTag != null) {
+                        switch (currentTabTag) {
+                            case "Meaning":
+                                _defList.clear();
+                                _service.GetDefinition(searchText, _defHandler);
+                                break;
+                            case "Synonym":
+                                _synList.clear();
+                                _service.GetSynonym(searchText, _synHandler);
+                                break;
+                            case "Antonym":
+                                _antList.clear();
+                                _service.GetAntonym(searchText, _antHandler);
+                                break;
+                            case "Example":
+                                _exampleList.clear();
+                                _service.GetExample(searchText, _exampleHandler);
+                                break;
+                        }
                     }
+                    _dicResultTab.setCurrentTab(_dicResultTab.getCurrentTab());
                     if (imm != null)
                         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 } catch (HttpHostConnectException e) {
