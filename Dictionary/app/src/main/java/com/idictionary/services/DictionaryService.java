@@ -50,6 +50,33 @@ public class DictionaryService {
         _httpClient.get(url, null, jsonResponseHandler);
     }
 
+    public void GetSynonym(@NonNull String word, JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException {
+        if (!isNetworkOnline()) {
+            throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
+        }
+
+        String url = this.populateUrl(word, "synonyms");
+        _httpClient.get(url, null, jsonResponseHandler);
+    }
+
+    public void GetAntonym(@NonNull String word, JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException {
+        if (!isNetworkOnline()) {
+            throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
+        }
+
+        String url = this.populateUrl(word, "antonyms");
+        _httpClient.get(url, null, jsonResponseHandler);
+    }
+
+    public void GetExample(@NonNull String word, JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException {
+        if (!isNetworkOnline()) {
+            throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
+        }
+
+        String url = this.populateUrl(word, "examples");
+        _httpClient.get(url, null, jsonResponseHandler);
+    }
+
     private StringBuilder append(@NonNull String value) {
         _sb.append("/").append(value);
         return _sb;

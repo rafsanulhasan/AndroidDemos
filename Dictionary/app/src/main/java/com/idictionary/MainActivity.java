@@ -19,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -27,7 +28,10 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.idictionary.adapters.AntonymListAdapter;
+import com.idictionary.adapters.ExampleListAdapter;
 import com.idictionary.adapters.MeaningListAdapter;
+import com.idictionary.adapters.SynonymListAdapter;
 import com.idictionary.services.DictionaryService;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
@@ -49,7 +53,7 @@ import static com.idictionary.R.layout;
 
 public class MainActivity
         extends AppCompatActivity
-        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener, View.OnKeyListener, TextToSpeech.OnInitListener {
+        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener, View.OnKeyListener, TextToSpeech.OnInitListener, TabHost.OnTabChangeListener {
 
     public static final String TAG = "MainActivity";
     private static final int REQUEST_INTERNET = 200;
@@ -60,17 +64,271 @@ public class MainActivity
     private EditText _txtSearch;
     private EditText _txtSearchEdit;
     private TextView _lblSearchEdit;
-    private ListView _defList;
+    private ListView _defListView;
+    private ListView _synListView;
+    private ListView _antListView;
+    private ListView _exampleListView;
     private Button _btnSearch;
     private Button _btnSearchEdit;
     private Button _btnSpeak;
     private DictionaryService _service;
-    private JsonHttpResponseHandler _handler;
-    private List<String> _meaningList;
-    private MeaningListAdapter _meaningListAdapter;
+    private JsonHttpResponseHandler _defHandler;
+    private JsonHttpResponseHandler _synHandler;
+    private JsonHttpResponseHandler _antHandler;
+    private JsonHttpResponseHandler _exampleHandler;
+    private List<String> _defList;
+    private MeaningListAdapter _defListAdapter;
+    private List<String> _synList;
+    private SynonymListAdapter _synListAdapter;
+    private List<String> _antList;
+    private AntonymListAdapter _antListAdapter;
+    private List<String> _exampleList;
+    private ExampleListAdapter _exampleListAdapter;
     private TextToSpeech _tts;
     private ProgressBar _dictLoadProgress;
     private TabHost _dicResultTab;
+
+    private void configureData(List<String> list, ArrayAdapter<String> arrayAdapter, List<String> data) {
+        list.clear();
+        list.addAll(data);
+        arrayAdapter.notifyDataSetChanged();
+    }
+
+    private void configureData(List<String> list, ArrayAdapter<String> arrayAdapter, Exception e) {
+        list.clear();
+        list.add(e.getMessage());
+        arrayAdapter.notifyDataSetChanged();
+    }
+
+    private void configureData(List<String> list, ArrayAdapter<String> arrayAdapter, Throwable t) {
+        list.clear();
+        list.add(t.getMessage());
+        arrayAdapter.notifyDataSetChanged();
+    }
+
+    private void configureData(List<String> list, ArrayAdapter<String> arrayAdapter, String s) {
+        list.clear();
+        list.add(s);
+        arrayAdapter.notifyDataSetChanged();
+    }
+
+    private void initAsyncHttpResponseHandler(final List<String> values, final ArrayAdapter<String> adapter, final ListView listView) {
+        JsonHttpResponseHandler handler = new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                // If the response is JSONObject instead of expected JSONArray
+                OnSuccess(statusCode, headers, response, values, adapter);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
+                if (throwable != null &&
+                        (throwable.getCause() instanceof ConnectTimeoutException ||
+                                throwable.getCause() instanceof HttpHostConnectException ||
+                                throwable.getCause() instanceof ConnectionPendingException)) {
+                    String message = "onFailure (other): " + throwable.getMessage();
+                    configureData(values, adapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                } else
+                    try {
+                        String message = response.getString("message");
+                        configureData(values, adapter, message);
+                        //Toast.makeText(MainActivity.this, "onFailure ok: " + message, Toast.LENGTH_LONG).show();
+                    } catch (JSONException e) {
+                        Toast.makeText(MainActivity.this, "onfailure catch: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                String message = "onFailure (jsonarray): " + throwable.getMessage();
+                configureData(values, adapter, message);
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onFinish() {
+                super.onFinish();
+                _dictLoadProgress.setVisibility(View.INVISIBLE);
+                listView.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onProgress(long bytesWritten, long totalSize) {
+                //super.onProgress(bytesWritten, totalSize);
+                Integer bytesWrittenInt = Integer.parseInt(Long.toString(bytesWritten));
+                Integer totalSizeInt = Integer.parseInt(Long.toString(totalSize));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    _dictLoadProgress.setMin(bytesWrittenInt);
+                    _dictLoadProgress.setMax(totalSizeInt);
+                }
+                _dictLoadProgress.setProgress(bytesWrittenInt);
+
+                //String.format("Progress %d from %d (%2.0f%%)", bytesWritten, totalSize, (totalSize > 0) ? (bytesWritten * 1.0 / totalSize) * 100 : -1)l
+            }
+
+            @Override
+            public void onStart() {
+                super.onStart();
+                _dictLoadProgress.setVisibility(View.VISIBLE);
+                listView.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onUserException(Throwable error) {
+                String message = "userEx (" + error.getCause() + "): " + error.getMessage();
+                configureData(values, adapter, message);
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        };
+        if (adapter instanceof MeaningListAdapter)
+            _defHandler = handler;
+        else if (adapter instanceof SynonymListAdapter)
+            _synHandler = handler;
+        else if (adapter instanceof AntonymListAdapter)
+            _antHandler = handler;
+        else if (adapter instanceof ExampleListAdapter)
+            _exampleHandler = handler;
+        listView.setAdapter(adapter);
+    }
+
+    private void OnSuccess(int statusCode, Header[] headers, JSONObject response, List<String> list, ArrayAdapter<String> adapter) {
+        //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+        try {
+            if (adapter instanceof MeaningListAdapter) {
+                final JSONArray definitions = response.getJSONArray("definitions");
+                for (int i = 0; i < definitions.length(); i++) {
+                    JSONObject def = null;
+                    try {
+                        def = definitions.getJSONObject(i);
+                        String d = "";
+                        if (def.getString("partOfSpeech") != null)
+                            d += "(" + def.getString("partOfSpeech") + ") ";
+                        if (def.getString("definition") != null)
+                            d += def.getString("definition");
+                        list.add(d);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    list.sort(String::compareTo);
+                }
+                adapter.notifyDataSetChanged();
+            } else {
+                try {
+                    String whatToGet = adapter instanceof SynonymListAdapter ? "synonyms" : (adapter instanceof AntonymListAdapter ? "antonyms" : "examples");
+                    final JSONArray others = response.getJSONArray(whatToGet);
+                    for (int i = 0; i < others.length(); i++) {
+                        //Toast.makeText(MainActivity.this, others.getString(i), Toast.LENGTH_LONG).show();
+                        list.add(others.getString(i));
+                    }
+                    if (list.isEmpty())
+                        list.add("no results found");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                        list.sort(String::compareTo);
+                    adapter.notifyDataSetChanged();
+                } catch (JSONException e) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        } catch (JSONException e) {
+            //configureData(list, adapter instanceof MeaningListAdapter ? ((MeaningListAdapter)adapter) : (adapter instanceof SynonymListAdapter ? ((SynonymListAdapter)adapter): (adapter instanceof AntonymListAdapter ? ((AntonymListAdapter)adapter) :((ExampleListAdapter)adapter))), e);
+            configureData(list, adapter, e);
+            Toast.makeText(MainActivity.this, "success: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void speakOut(String text) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+            _tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+        else
+            _tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+    }
+
+    @Override
+    public void onBackPressed() {
+        Log.d("CDA", "onBackPressed Called");
+        if (_mainContent.getVisibility() == View.VISIBLE) {
+            finish();
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
+        if (_dictionaryContent.getVisibility() == View.VISIBLE) {
+            _dictionaryContent.setVisibility(View.GONE);
+            _mainContent.setVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override
+    public void onClick(View view) {
+        String searchText;
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        switch (view.getId()) {
+            case id.btnSearch:
+                _mainContent.setVisibility(View.INVISIBLE);
+                searchText = _txtSearch.getText().toString();
+                _lblSearchEdit.setText(searchText);
+                _txtSearchEdit.setText(searchText);
+                _dictionaryContent.setVisibility(View.VISIBLE);
+                try {
+                    _service = new DictionaryService(this);
+                    _service.GetDefinition(searchText, _defHandler);
+                    if (imm != null)
+                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                } catch (HttpHostConnectException e) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+                break;
+            case id.btnSearchEdit:
+                searchText = _txtSearchEdit.getText().toString();
+
+                _txtSearchEdit.setVisibility(View.INVISIBLE);
+                view.setVisibility(View.INVISIBLE);
+
+                _btnSpeak.setVisibility(View.VISIBLE);
+                _lblSearchEdit.setVisibility(View.VISIBLE);
+
+                _lblSearchEdit.setText(searchText);
+                _txtSearch.setText(searchText);
+                try {
+                    _service = new DictionaryService(this);
+                    if (_dicResultTab.getCurrentTabTag().equals("Meaning")) {
+                        _defList.clear();
+                        _service.GetDefinition(searchText, _defHandler);
+                    } else if (_dicResultTab.getCurrentTabTag().equals("Synonym")) {
+                        _synList.clear();
+                        _service.GetSynonym(searchText, _synHandler);
+                    } else if (_dicResultTab.getCurrentTabTag().equals("Antonym")) {
+                        _synList.clear();
+                        _service.GetAntonym(searchText, _antHandler);
+                    } else if (_dicResultTab.getCurrentTabTag().equals("Example")) {
+                        _synList.clear();
+                        _service.GetExample(searchText, _exampleHandler);
+                    }
+                    if (imm != null)
+                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                } catch (HttpHostConnectException e) {
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+
+                break;
+            case id.btnSpeak:
+                this.speakOut(_lblSearchEdit.getText().toString());
+                break;
+            case id.lblSearchEdit:
+                view.setVisibility(View.INVISIBLE);
+                _txtSearchEdit.setVisibility(View.VISIBLE);
+                _txtSearchEdit.onHoverChanged(true);
+                _btnSearchEdit.setVisibility(View.VISIBLE);
+                _btnSpeak.setVisibility(View.INVISIBLE);
+                break;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,7 +350,10 @@ public class MainActivity
         _btnSpeak = findViewById(id.btnSpeak);
         _btnSearch.setClickable(true);
         _btnSearchEdit.setClickable(true);
-        _defList = findViewById(id.defList);
+        _defListView = findViewById(id.defList);
+        _synListView = findViewById(id.synList);
+        _antListView = findViewById(id.antList);
+        _exampleListView = findViewById(id.exampleList);
         _dictLoadProgress = findViewById(id.dictLoadProgress);
         _dictLoadProgress.setProgress(0);
         _dicResultTab = findViewById(id.dicResultTab);
@@ -109,22 +370,22 @@ public class MainActivity
 
         _dicResultTab.setup();
 
-        TabHost.TabSpec definitionsTab = _dicResultTab.newTabSpec("Meanings");
+        TabHost.TabSpec definitionsTab = _dicResultTab.newTabSpec("Meaning");
         definitionsTab.setContent(id.dicDefTab);
         definitionsTab.setIndicator("Meaning");
         _dicResultTab.addTab(definitionsTab);
 
-        TabHost.TabSpec synTab = _dicResultTab.newTabSpec("Synonyms");
+        TabHost.TabSpec synTab = _dicResultTab.newTabSpec("Synonym");
         synTab.setContent(id.dicSynTab);
         synTab.setIndicator("Synonym");
         _dicResultTab.addTab(synTab);
 
-        TabHost.TabSpec antTab = _dicResultTab.newTabSpec("Antonyms");
+        TabHost.TabSpec antTab = _dicResultTab.newTabSpec("Antonym");
         antTab.setContent(id.dicAntTab);
         antTab.setIndicator("Antonym");
         _dicResultTab.addTab(antTab);
 
-        TabHost.TabSpec exampleTab = _dicResultTab.newTabSpec("Examples");
+        TabHost.TabSpec exampleTab = _dicResultTab.newTabSpec("Example");
         exampleTab.setContent(id.dicExTab);
         exampleTab.setIndicator("Example");
         _dicResultTab.addTab(exampleTab);
@@ -133,77 +394,24 @@ public class MainActivity
         fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show());
 
-        _meaningList = new ArrayList<>();
-        _meaningListAdapter = new MeaningListAdapter(this, _meaningList);
-        _handler = new JsonHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                // If the response is JSONObject instead of expected JSONArray
-                OnSuccess(statusCode, headers, response, _meaningList, _meaningListAdapter);
-            }
+        _defList = new ArrayList<>();
+        _defListAdapter = new MeaningListAdapter(this, _defList);
+        initAsyncHttpResponseHandler(_defList, _defListAdapter, _defListView);
 
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject response) {
-                if (throwable != null &&
-                        (throwable.getCause() instanceof ConnectTimeoutException ||
-                                throwable.getCause() instanceof HttpHostConnectException ||
-                                throwable.getCause() instanceof ConnectionPendingException)) {
-                    String message = "onFailure (other): " + throwable.getMessage();
-                    configureData(message);
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
-                } else
-                    try {
-                        String message = response.getString("message");
-                        configureData(message);
-                        //Toast.makeText(MainActivity.this, "onFailure ok: " + message, Toast.LENGTH_LONG).show();
-                    } catch (JSONException e) {
-                        Toast.makeText(MainActivity.this, "onfailure catch: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-            }
+        _synList = new ArrayList<>();
+        _synListAdapter = new SynonymListAdapter(this, _synList);
+        initAsyncHttpResponseHandler(_synList, _synListAdapter, _synListView);
 
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
-                String message = "onFailure (jsonarray): " + throwable.getMessage();
-                configureData(message);
-                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
-            }
+        _antList = new ArrayList<>();
+        _antListAdapter = new AntonymListAdapter(this, _antList);
+        initAsyncHttpResponseHandler(_antList, _antListAdapter, _antListView);
 
-            @Override
-            public void onFinish() {
-                super.onFinish();
-                _dictLoadProgress.setVisibility(View.INVISIBLE);
-                _defList.setVisibility(View.VISIBLE);
-            }
+        _exampleList = new ArrayList<>();
+        _exampleListAdapter = new ExampleListAdapter(this, _exampleList);
+        initAsyncHttpResponseHandler(_exampleList, _exampleListAdapter, _exampleListView);
 
-            @Override
-            public void onProgress(long bytesWritten, long totalSize) {
-                //super.onProgress(bytesWritten, totalSize);
-                Integer bytesWrittenInt = Integer.parseInt(Long.toString(bytesWritten));
-                Integer totalSizeInt = Integer.parseInt(Long.toString(totalSize));
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    _dictLoadProgress.setMin(bytesWrittenInt);
-                    _dictLoadProgress.setMax(totalSizeInt);
-                }
-                _dictLoadProgress.setProgress(bytesWrittenInt);
+        _dicResultTab.setOnTabChangedListener(this);
 
-                //String.format("Progress %d from %d (%2.0f%%)", bytesWritten, totalSize, (totalSize > 0) ? (bytesWritten * 1.0 / totalSize) * 100 : -1)l
-            }
-
-            @Override
-            public void onStart() {
-                super.onStart();
-                _dictLoadProgress.setVisibility(View.VISIBLE);
-                _defList.setVisibility(View.INVISIBLE);
-            }
-
-            @Override
-            public void onUserException(Throwable error) {
-                String message = "userEx (" + error.getCause() + "): " + error.getMessage();
-                configureData(message);
-                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
-            }
-        };
-        _defList.setAdapter(_meaningListAdapter);
     }
 
     @Override
@@ -211,6 +419,56 @@ public class MainActivity
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
+    }
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+
+            int result = _tts.setLanguage(Locale.US);
+
+            if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Toast.makeText(this, "This Language is not supported", Toast.LENGTH_LONG).show();
+            } else {
+                _btnSpeak.setClickable(true);
+                _btnSpeak.setEnabled(true);
+            }
+
+        } else {
+            Toast.makeText(this, "Initilization Failed!", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
+        switch (view.getId()) {
+            case id.txtSearch:
+                if (keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                    onClick(_btnSearch);
+                    return true;
+                }
+                break;
+            case id.txtSearchEdit:
+                if (keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                    onClick(_btnSearchEdit);
+                    return true;
+                }
+                break;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)
+                && (event.getRepeatCount() == 0)) {
+            Log.d("CDA", "onKeyDown Called");
+            onBackPressed();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
@@ -246,181 +504,56 @@ public class MainActivity
         }
     }
 
-    private void OnSuccess(int statusCode, Header[] headers, JSONObject response, List<String> meaningList, MeaningListAdapter meaningListAdapter) {
-        try {
-            final JSONArray definitions = response.getJSONArray("definitions");
-            for (int i = 0; i < definitions.length(); i++) {
-                JSONObject def = definitions.getJSONObject(i);
-                String d = "";
-                if (def.getString("partOfSpeech") != null)
-                    d += "(" + def.getString("partOfSpeech") + ") ";
-                if (def.getString("definition") != null)
-                    d += def.getString("definition");
-                meaningList.add(d);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                meaningList.sort(String::compareTo);
-            }
-            meaningListAdapter.notifyDataSetChanged();
-            //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
-        } catch (JSONException e) {
-            configureData(e);
-            Toast.makeText(MainActivity.this, "success: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-
     @Override
-    public void onBackPressed() {
-        Log.d("CDA", "onBackPressed Called");
-        if (_mainContent.getVisibility() == View.VISIBLE) {
-            finish();
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_HOME);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-        }
-        if (_dictionaryContent.getVisibility() == View.VISIBLE) {
-            _dictionaryContent.setVisibility(View.GONE);
-            _mainContent.setVisibility(View.VISIBLE);
-        }
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if ((keyCode == KeyEvent.KEYCODE_BACK)
-                && (event.getRepeatCount() == 0)) {
-            Log.d("CDA", "onKeyDown Called");
-            onBackPressed();
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
-
-    @Override
-    public void onClick(View view) {
-        String searchText;
+    public void onTabChanged(String s) {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        switch (view.getId()) {
-            case id.btnSearch:
-                _mainContent.setVisibility(View.INVISIBLE);
-                searchText = _txtSearch.getText().toString();
-                _lblSearchEdit.setText(searchText);
-                _txtSearchEdit.setText(searchText);
-                _dictionaryContent.setVisibility(View.VISIBLE);
+        String searchText = _lblSearchEdit.getText().toString();
+        switch (s) {
+            case "Antonym":
                 try {
-                    _service = new DictionaryService(this);
-                    _service.GetDefinition(searchText, _handler);
-                    if (imm != null)
-                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    _service = new DictionaryService(MainActivity.this);
+                    _antList.clear();
+                    _service.GetAntonym(searchText, _antHandler);
                 } catch (HttpHostConnectException e) {
-                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                    String message = e.getMessage();
+                    configureData(_antList, _antListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 }
                 break;
-            case id.btnSearchEdit:
-                searchText = _txtSearchEdit.getText().toString();
-
-                _txtSearchEdit.setVisibility(View.INVISIBLE);
-                view.setVisibility(View.INVISIBLE);
-
-                _btnSpeak.setVisibility(View.VISIBLE);
-                _lblSearchEdit.setVisibility(View.VISIBLE);
-
-                _lblSearchEdit.setText(searchText);
-                _txtSearch.setText(searchText);
+            case "Example":
                 try {
-                    _service = new DictionaryService(this);
-                    _meaningList.clear();
-                    _service.GetDefinition(searchText, _handler);
-                    if (imm != null)
-                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    _service = new DictionaryService(MainActivity.this);
+                    _exampleList.clear();
+                    _service.GetExample(searchText, _exampleHandler);
                 } catch (HttpHostConnectException e) {
-                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-
-                break;
-            case id.btnSpeak:
-                this.speakOut(_lblSearchEdit.getText().toString());
-                break;
-            case id.lblSearchEdit:
-                view.setVisibility(View.INVISIBLE);
-                _txtSearchEdit.setVisibility(View.VISIBLE);
-                _txtSearchEdit.onHoverChanged(true);
-                _btnSearchEdit.setVisibility(View.VISIBLE);
-                _btnSpeak.setVisibility(View.INVISIBLE);
-                break;
-        }
-    }
-
-    private void configureData(List<String> data) {
-        _meaningList = data;
-        _meaningListAdapter.notifyDataSetChanged();
-    }
-
-    private void configureData(Exception e) {
-        _meaningList.clear();
-        _meaningList.add(e.getMessage());
-        _meaningListAdapter.notifyDataSetChanged();
-    }
-
-    private void configureData(Throwable t) {
-        _meaningList.clear();
-        _meaningList.add(t.getMessage());
-        _meaningListAdapter.notifyDataSetChanged();
-    }
-
-    private void configureData(String s) {
-        _meaningList.clear();
-        _meaningList.add(s);
-        _meaningListAdapter.notifyDataSetChanged();
-    }
-
-    @Override
-    public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
-        switch (view.getId()) {
-            case id.txtSearch:
-                if (keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
-                    onClick(_btnSearch);
-                    return true;
+                    String message = e.getMessage();
+                    configureData(_synList, _synListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 }
                 break;
-            case id.txtSearchEdit:
-                if (keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
-                    onClick(_btnSearchEdit);
-                    return true;
+            case "Synonym":
+                try {
+                    _service = new DictionaryService(MainActivity.this);
+                    _synList.clear();
+                    _service.GetSynonym(searchText, _synHandler);
+                } catch (HttpHostConnectException e) {
+                    String message = e.getMessage();
+                    configureData(_synList, _synListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                }
+                break;
+            default:
+                try {
+                    _service = new DictionaryService(MainActivity.this);
+                    _defList.clear();
+                    _service.GetDefinition(searchText, _defHandler);
+                } catch (HttpHostConnectException e) {
+                    String message = e.getMessage();
+                    configureData(_defList, _defListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 }
                 break;
         }
-
-        return false;
-    }
-
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-
-            int result = _tts.setLanguage(Locale.US);
-
-            if (result == TextToSpeech.LANG_MISSING_DATA
-                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Toast.makeText(this, "This Language is not supported", Toast.LENGTH_LONG).show();
-            } else {
-                _btnSpeak.setClickable(true);
-                _btnSpeak.setEnabled(true);
-            }
-
-        } else {
-            Toast.makeText(this, "Initilization Failed!", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private void speakOut(String text) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-            _tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-        else
-            _tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
     }
 }
 

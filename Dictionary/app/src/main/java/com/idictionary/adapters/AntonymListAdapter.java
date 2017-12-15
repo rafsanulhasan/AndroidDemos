@@ -15,19 +15,19 @@ import com.idictionary.R;
 
 import java.util.List;
 
-public class MeaningListAdapter extends ArrayAdapter<String> {
+public class AntonymListAdapter extends ArrayAdapter<String> {
     private final Activity _activity;
     private final Context _context;
-    private List<String> _meaningList;
+    private List<String> _synonymList;
     private LayoutInflater _inflater;
     private View _rowView;
     private LinearLayout _layout;
 
-    public MeaningListAdapter(@NonNull Activity activity, @NonNull List<String> meaningList) {
-        super(activity, R.layout.content_dictionary, meaningList);
+    public AntonymListAdapter(@NonNull Activity activity, @NonNull List<String> synonymList) {
+        super(activity, R.layout.content_dictionary, synonymList);
         _activity = activity;
         _context = activity;
-        this._meaningList = meaningList;
+        this._synonymList = synonymList;
     }
 
     @SuppressLint({"ViewHolder", "InflateParams"})
@@ -35,7 +35,7 @@ public class MeaningListAdapter extends ArrayAdapter<String> {
     @Override
     public View getView(int position, View view, @NonNull ViewGroup parent) {
         _inflater = _activity.getLayoutInflater();
-        _rowView = _inflater.inflate(R.layout.dic_def_result_row, null, false);
+        _rowView = _inflater.inflate(R.layout.dic_ant_result_row, null, false);
 
         //this code gets references to objects in the listview_row.xml file
         //_layout = _rowView.findViewById(R.id.dic_list);
@@ -43,9 +43,9 @@ public class MeaningListAdapter extends ArrayAdapter<String> {
         //TextView meaningTextField = new TextView(_context);
         //meaningTextField.setPadding(0, 5, 0, 5);
         //meaningTextField.setMaxEms(10000);
-        TextView meaningTextField = _rowView.findViewById(R.id.txtDefinition);
+        TextView synTextField = _rowView.findViewById(R.id.txtAntonym);
         //this code sets the values of the objects to values from the arrays
-        meaningTextField.setText(_meaningList.get(position));
+        synTextField.setText(_synonymList.get(position));
         //_layout.addView(meaningTextField);
         return _rowView;
 
