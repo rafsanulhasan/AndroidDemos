@@ -193,13 +193,14 @@ public class MainActivity
     }
 
     private void OnSuccess(int statusCode, Header[] headers, JSONObject response, List<String> list, ArrayAdapter<String> adapter) {
+        String whatToGet = adapter instanceof SynonymListAdapter ? "synonyms" : (adapter instanceof AntonymListAdapter ? "antonyms" : "examples");
         //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
         try {
             if (adapter instanceof MeaningListAdapter) {
-                final JSONArray definitions = response.getJSONArray("definitions");
-                for (int i = 0; i < definitions.length(); i++) {
-                    JSONObject def;
-                    try {
+                try {
+                    final JSONArray definitions = response.getJSONArray("definitions");
+                    for (int i = 0; i < definitions.length(); i++) {
+                        JSONObject def;
                         def = definitions.getJSONObject(i);
                         String d = "";
                         if (def.getString("partOfSpeech") != null)
@@ -207,24 +208,25 @@ public class MainActivity
                         if (def.getString("definition") != null)
                             d += def.getString("definition");
                         list.add(d);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
                     }
+                    if (list.isEmpty())
+                        list.add("No " + whatToGet + " found");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        list.sort(String::compareTo);
+                    }
+                    adapter.notifyDataSetChanged();
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    list.sort(String::compareTo);
-                }
-                adapter.notifyDataSetChanged();
             } else {
                 try {
-                    String whatToGet = adapter instanceof SynonymListAdapter ? "synonyms" : (adapter instanceof AntonymListAdapter ? "antonyms" : "examples");
                     final JSONArray others = response.getJSONArray(whatToGet);
                     for (int i = 0; i < others.length(); i++) {
                         //Toast.makeText(MainActivity.this, others.getString(i), Toast.LENGTH_LONG).show();
                         list.add(others.getString(i));
                     }
                     if (list.isEmpty())
-                        list.add("no results found");
+                        list.add("No " + whatToGet + " found");
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
                         list.sort(String::compareTo);
                     adapter.notifyDataSetChanged();
@@ -232,7 +234,7 @@ public class MainActivity
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                 }
             }
-        } catch (JSONException e) {
+        } catch (Exception e) {
             //configureData(list, adapter instanceof MeaningListAdapter ? ((MeaningListAdapter)adapter) : (adapter instanceof SynonymListAdapter ? ((SynonymListAdapter)adapter): (adapter instanceof AntonymListAdapter ? ((AntonymListAdapter)adapter) :((ExampleListAdapter)adapter))), e);
             configureData(list, adapter, e);
             Toast.makeText(MainActivity.this, "success: " + e.getMessage(), Toast.LENGTH_LONG).show();
