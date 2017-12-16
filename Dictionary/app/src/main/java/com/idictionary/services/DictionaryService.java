@@ -7,27 +7,40 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.support.annotation.NonNull;
 
+import com.idictionary.utils.JsonCacher;
+import com.idictionary.utils.MyJsonHttpResponseHandler;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
+import com.loopj.android.http.PersistentCookieStore;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
+import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.conn.HttpHostConnectException;
 
 
 public class DictionaryService {
+    private static DictionaryService _svc;
     private final String _baseUrl = "https://wordsapiv1.p.mashape.com";
     private final Context _context;
+    JsonHttpResponseHandler _currentResponseHandler;
+    String _word;
+    PersistentCookieStore _cookieStrore;
+    JsonCacher _jsonCacher;
+    String _defJson;
+    String _synJson;
+    String _antJson;
+    String _exampleJson;
+    String _fileName;
     private StringBuilder _sb;
     private AsyncHttpClient _httpClient;
-    private RequestParams _params;
-    private List<String> _result;
     private ConnectivityManager _connectivity;
 
-    public DictionaryService(Context context) {
+    private DictionaryService(Context context, String word) {
+        _word = word;
         _context = context;
         _connectivity = (ConnectivityManager) _context.getSystemService(Context.CONNECTIVITY_SERVICE);
         _sb = new StringBuilder(_baseUrl);
@@ -36,45 +49,92 @@ public class DictionaryService {
         _httpClient.setResponseTimeout(100);
         _httpClient.setTimeout(100);
         _httpClient.setMaxRetriesAndTimeout(5, 100);
-        _params = new RequestParams();
-        _result = new ArrayList<>();
+        _cookieStrore = new PersistentCookieStore(_context);
+        _httpClient.setCookieStore(_cookieStrore);
+        _jsonCacher = new JsonCacher(_context);
         this.setRequestHeaders();
     }
 
-    public void GetDefinition(@NonNull String word, JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException {
-        if (!isNetworkOnline()) {
-            throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
-        }
-
-        String url = this.populateUrl(word, "definitions");
-        _httpClient.get(url, null, jsonResponseHandler);
+    public static DictionaryService getInstance(Context context, String word) {
+        return _svc == null ? new DictionaryService(context, word) : _svc;
     }
 
-    public void GetSynonym(@NonNull String word, JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException {
-        if (!isNetworkOnline()) {
-            throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
-        }
-
-        String url = this.populateUrl(word, "synonyms");
-        _httpClient.get(url, null, jsonResponseHandler);
+    private void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse, JsonHttpResponseHandler responseHandler) {
+        responseHandler.onFailure(statusCode, headers, throwable, errorResponse);
     }
 
-    public void GetAntonym(@NonNull String word, JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException {
-        if (!isNetworkOnline()) {
-            throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
-        }
-
-        String url = this.populateUrl(word, "antonyms");
-        _httpClient.get(url, null, jsonResponseHandler);
+    private void onFinish(JsonHttpResponseHandler responseHandler) {
+        responseHandler.onFinish();
     }
 
-    public void GetExample(@NonNull String word, JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException {
-        if (!isNetworkOnline()) {
-            throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
-        }
+    private void onProgress(long bytesWritten, long totalSize, JsonHttpResponseHandler responseHandler) {
+        responseHandler.onProgress(bytesWritten, totalSize);
+    }
 
-        String url = this.populateUrl(word, "examples");
-        _httpClient.get(url, null, jsonResponseHandler);
+    private void onStart(JsonHttpResponseHandler responseHandler) {
+        responseHandler.onStart();
+    }
+
+    private void onSuccess(int statusCode, Header[] headers, JSONObject response, JsonHttpResponseHandler responsehandler) {
+        responsehandler.onSuccess(statusCode, headers, response);
+    }
+
+    public void GetDefinition(final JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException, JSONException {
+        _fileName = "def." + _word + ".json";
+        _defJson = _jsonCacher.readJsonFileData(_fileName);
+        if (_defJson != null) {
+            jsonResponseHandler.onSuccess(200, null, new JSONObject(_defJson));
+            jsonResponseHandler.onFinish();
+        } else {
+            if (!this.isNetworkOnline())
+                throw new HttpHostConnectException(new IOException("No internet connection"), null);
+            _currentResponseHandler = new MyJsonHttpResponseHandler(_context, jsonResponseHandler, _fileName);
+            String url = this.populateUrl(_word, "definitions");
+            _httpClient.get(url, null, _currentResponseHandler);
+        }
+    }
+
+    public void GetSynonym(JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException, JSONException {
+        _fileName = "syn." + _word + ".json";
+        if (_synJson != null) {
+            jsonResponseHandler.onSuccess(200, null, new JSONObject(_synJson));
+            jsonResponseHandler.onFinish();
+        } else {
+            if (!isNetworkOnline())
+                throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
+            _currentResponseHandler = new MyJsonHttpResponseHandler(_context, jsonResponseHandler, _fileName);
+            String url = this.populateUrl(_word, "synonyms");
+            _httpClient.get(url, null, _currentResponseHandler);
+        }
+    }
+
+    public void GetAntonym(JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException, JSONException {
+        _fileName = "ant." + _word + ".json";
+        if (_antJson != null) {
+            jsonResponseHandler.onSuccess(200, null, new JSONObject(_antJson));
+            jsonResponseHandler.onFinish();
+        } else {
+            if (!isNetworkOnline())
+                throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
+            _currentResponseHandler = new MyJsonHttpResponseHandler(_context, jsonResponseHandler, _fileName);
+            String url = this.populateUrl(_word, "antonyms");
+            _httpClient.get(url, null, _currentResponseHandler);
+        }
+    }
+
+    public void GetExample(JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException, JSONException {
+        _fileName = "ex." + _word + ".json";
+        if (_exampleJson != null) {
+            jsonResponseHandler.onSuccess(200, null, new JSONObject(_exampleJson));
+            jsonResponseHandler.onFinish();
+        } else {
+            if (!isNetworkOnline())
+                throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
+
+            _currentResponseHandler = new MyJsonHttpResponseHandler(_context, jsonResponseHandler, _fileName);
+            String url = this.populateUrl(_word, "examples");
+            _httpClient.get(url, null, _currentResponseHandler);
+        }
     }
 
     private StringBuilder append(@NonNull String value) {

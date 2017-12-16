@@ -203,9 +203,9 @@ public class MainActivity
                         JSONObject def;
                         def = definitions.getJSONObject(i);
                         String d = "";
-                        if (def.getString("partOfSpeech") != null)
+                        if (def.has("partOfSpeech") && def.getString("partOfSpeech") != null)
                             d += "(" + def.getString("partOfSpeech") + ") ";
-                        if (def.getString("definition") != null)
+                        if (def.has("definition") && def.getString("definition") != null)
                             d += def.getString("definition");
                         list.add(d);
                     }
@@ -216,7 +216,10 @@ public class MainActivity
                     }
                     adapter.notifyDataSetChanged();
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    String message = e.getMessage();
+                    configureData(_defList, _defListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                    //Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_LONG).show();
                 }
             } else {
                 try {
@@ -277,30 +280,35 @@ public class MainActivity
                 _dictionaryContent.setVisibility(View.VISIBLE);
                 try {
                     String currentTabTag = _dicResultTab.getCurrentTabTag();
-                    _service = new DictionaryService(this);
                     if (currentTabTag != null) {
                         switch (currentTabTag) {
-                            case "Meaning":
-                                _defList.clear();
-                                _service.GetDefinition(searchText, _defHandler);
-                                break;
-                            case "Synonym":
-                                _synList.clear();
-                                _service.GetSynonym(searchText, _synHandler);
-                                break;
                             case "Antonym":
+                                _service = DictionaryService.getInstance(this, searchText);
                                 _antList.clear();
-                                _service.GetAntonym(searchText, _antHandler);
+                                _service.GetAntonym(_antHandler);
                                 break;
                             case "Example":
+                                _service = DictionaryService.getInstance(this, searchText);
                                 _exampleList.clear();
-                                _service.GetExample(searchText, _exampleHandler);
+                                _service.GetExample(_exampleHandler);
+                                break;
+                            case "Meaning":
+                                _service = DictionaryService.getInstance(this, searchText);
+                                _defList.clear();
+                                _service.GetDefinition(_defHandler);
+                                break;
+                            case "Synonym":
+                                _service = DictionaryService.getInstance(this, searchText);
+                                _synList.clear();
+                                _service.GetSynonym(_synHandler);
                                 break;
                         }
                     }
                     _dicResultTab.setCurrentTab(_dicResultTab.getCurrentTab());
                     if (imm != null)
                         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                } catch (JSONException e) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                 } catch (HttpHostConnectException e) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                 }
@@ -318,24 +326,27 @@ public class MainActivity
                 _txtSearch.setText(searchText);
                 try {
                     String currentTabTag = _dicResultTab.getCurrentTabTag();
-                    _service = new DictionaryService(this);
                     if (currentTabTag != null) {
                         switch (currentTabTag) {
                             case "Meaning":
+                                _service = DictionaryService.getInstance(this, searchText);
                                 _defList.clear();
-                                _service.GetDefinition(searchText, _defHandler);
+                                _service.GetDefinition(_defHandler);
                                 break;
                             case "Synonym":
+                                _service = DictionaryService.getInstance(this, searchText);
                                 _synList.clear();
-                                _service.GetSynonym(searchText, _synHandler);
+                                _service.GetSynonym(_synHandler);
                                 break;
                             case "Antonym":
+                                _service = DictionaryService.getInstance(this, searchText);
                                 _antList.clear();
-                                _service.GetAntonym(searchText, _antHandler);
+                                _service.GetAntonym(_antHandler);
                                 break;
                             case "Example":
+                                _service = DictionaryService.getInstance(this, searchText);
                                 _exampleList.clear();
-                                _service.GetExample(searchText, _exampleHandler);
+                                _service.GetExample(_exampleHandler);
                                 break;
                         }
                     }
@@ -543,10 +554,14 @@ public class MainActivity
         switch (s) {
             case "Antonym":
                 try {
-                    _service = new DictionaryService(MainActivity.this);
+                    _service = DictionaryService.getInstance(this, searchText);
                     _antList.clear();
-                    _service.GetAntonym(searchText, _antHandler);
+                    _service.GetAntonym(_antHandler);
                 } catch (HttpHostConnectException e) {
+                    String message = e.getMessage();
+                    configureData(_antList, _antListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                } catch (JSONException e) {
                     String message = e.getMessage();
                     configureData(_antList, _antListAdapter, message);
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
@@ -554,21 +569,29 @@ public class MainActivity
                 break;
             case "Example":
                 try {
-                    _service = new DictionaryService(MainActivity.this);
+                    _service = DictionaryService.getInstance(this, searchText);
                     _exampleList.clear();
-                    _service.GetExample(searchText, _exampleHandler);
+                    _service.GetExample(_exampleHandler);
                 } catch (HttpHostConnectException e) {
                     String message = e.getMessage();
                     configureData(_synList, _synListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                } catch (JSONException e) {
+                    String message = e.getMessage();
+                    configureData(_exampleList, _exampleListAdapter, message);
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 }
                 break;
             case "Synonym":
                 try {
-                    _service = new DictionaryService(MainActivity.this);
+                    _service = DictionaryService.getInstance(this, searchText);
                     _synList.clear();
-                    _service.GetSynonym(searchText, _synHandler);
+                    _service.GetSynonym(_synHandler);
                 } catch (HttpHostConnectException e) {
+                    String message = e.getMessage();
+                    configureData(_synList, _synListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                } catch (JSONException e) {
                     String message = e.getMessage();
                     configureData(_synList, _synListAdapter, message);
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
@@ -576,9 +599,13 @@ public class MainActivity
                 break;
             default:
                 try {
-                    _service = new DictionaryService(MainActivity.this);
+                    _service = DictionaryService.getInstance(MainActivity.this, searchText);
                     _defList.clear();
-                    _service.GetDefinition(searchText, _defHandler);
+                    _service.GetDefinition(_defHandler);
+                } catch (JSONException e) {
+                    String message = e.getMessage();
+                    configureData(_defList, _defListAdapter, message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 } catch (HttpHostConnectException e) {
                     String message = e.getMessage();
                     configureData(_defList, _defListAdapter, message);
