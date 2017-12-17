@@ -31,11 +31,13 @@
 
             <EditText
                 android:id="@+id/txtSearch"
+                style="@android:style/Widget.Material.Light.EditText"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:ems="10"
                 android:hint="@string/enterWord"
                 android:inputType="text"
+                android:selectAllOnFocus="true"
                 android:text=""
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption" />
 
@@ -43,6 +45,7 @@
 
         <Button
             android:id="@+id/btnSearch"
+            style="@android:style/Widget.Material.Light.Button.Borderless"
             android:layout_width="31dp"
             android:layout_height="29dp"
             android:layout_marginBottom="8dp"
@@ -52,9 +55,10 @@
             android:background="@drawable/search"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.974"
+            app:layout_constraintHorizontal_bias="0.981"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.486" />
 
     </android.support.constraint.ConstraintLayout>
 
