@@ -15,7 +15,7 @@ import com.idictionary.R;
 
 import java.util.List;
 
-public class MeaningListAdapter extends ArrayAdapter<String> {
+public class MeaningListAdapter extends ArrayAdapter<String> implements View.OnClickListener {
     private final Activity _activity;
     private final Context _context;
     private List<String> _meaningList;
@@ -36,10 +36,17 @@ public class MeaningListAdapter extends ArrayAdapter<String> {
     public View getView(int position, View view, @NonNull ViewGroup parent) {
         _inflater = _activity.getLayoutInflater();
         _rowView = _inflater.inflate(R.layout.dic_def_result_row, null, false);
-        TextView meaningTextField = _rowView.findViewById(R.id.txtDefinition);
+        TextView meaningText = _rowView.findViewById(R.id.txtDefinition);
+        meaningText.setOnClickListener(this);
         //this code sets the values of the objects to values from the arrays
-        meaningTextField.setText(_meaningList.get(position));
+        meaningText.setText(_meaningList.get(position));
         return _rowView;
 
+    }
+
+    @Override
+    public void onClick(View view) {
+        View txtSearchEdit = _activity.findViewById(R.id.txtSearchEdit);
+        txtSearchEdit.getOnFocusChangeListener().onFocusChange(txtSearchEdit, false);
     }
 }

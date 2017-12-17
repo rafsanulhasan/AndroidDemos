@@ -54,7 +54,7 @@ import static com.idictionary.R.layout;
 
 public class MainActivity
         extends AppCompatActivity
-        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener, View.OnKeyListener, TextToSpeech.OnInitListener, TabHost.OnTabChangeListener {
+        implements ActivityCompat.OnRequestPermissionsResultCallback, View.OnClickListener, View.OnKeyListener, TextToSpeech.OnInitListener, TabHost.OnTabChangeListener, EditText.OnFocusChangeListener {
 
     public static final String TAG = "MainActivity";
     private static final int REQUEST_INTERNET = 200;
@@ -375,7 +375,7 @@ public class MainActivity
                 _txtSearchEditLayout.setVisibility(View.VISIBLE);
                 _txtSearchEdit.setVisibility(View.VISIBLE);
                 _btnSearchEdit.setVisibility(View.VISIBLE);
-                _txtSearchEdit.onHoverChanged(true);
+                _txtSearchEdit.getOnFocusChangeListener().onFocusChange(_txtSearchEdit, true);
                 break;
         }
     }
@@ -418,6 +418,7 @@ public class MainActivity
         _lblSearchEdit.setOnClickListener(this);
         _txtSearch.setOnKeyListener(this);
         _txtSearchEdit.setOnKeyListener(this);
+        _txtSearchEdit.setOnFocusChangeListener(this);
 
         _dicResultTab.setup();
 
@@ -470,6 +471,12 @@ public class MainActivity
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
+    }
+
+    @Override
+    public void onFocusChange(View view, boolean b) {
+        if (!b)
+            _btnSearchEdit.callOnClick();
     }
 
     @Override
@@ -557,6 +564,8 @@ public class MainActivity
 
     @Override
     public void onTabChanged(String s) {
+        hideSoftKey(_txtSearchEdit);
+        _txtSearchEdit.getOnFocusChangeListener().onFocusChange(_txtSearchEdit, false);
         String searchText = _lblSearchEdit.getText().toString();
         switch (s) {
             case "Antonym":

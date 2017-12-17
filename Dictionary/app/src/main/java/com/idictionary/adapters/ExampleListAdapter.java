@@ -15,7 +15,7 @@ import com.idictionary.R;
 
 import java.util.List;
 
-public class ExampleListAdapter extends ArrayAdapter<String> {
+public class ExampleListAdapter extends ArrayAdapter<String> implements View.OnClickListener {
     private final Activity _activity;
     private final Context _context;
     private List<String> _synonymList;
@@ -36,10 +36,16 @@ public class ExampleListAdapter extends ArrayAdapter<String> {
     public View getView(int position, View view, @NonNull ViewGroup parent) {
         _inflater = _activity.getLayoutInflater();
         _rowView = _inflater.inflate(R.layout.dic_example_result_row, null, false);
-        TextView synTextField = _rowView.findViewById(R.id.txtExample);
+        TextView exampleText = _rowView.findViewById(R.id.txtExample);
+        exampleText.setOnClickListener(this);
         //this code sets the values of the objects to values from the arrays
-        synTextField.setText(_synonymList.get(position));
+        exampleText.setText(_synonymList.get(position));
         return _rowView;
+    }
 
+    @Override
+    public void onClick(View view) {
+        View txtSearchEdit = _activity.findViewById(R.id.txtSearchEdit);
+        txtSearchEdit.getOnFocusChangeListener().onFocusChange(txtSearchEdit, false);
     }
 }

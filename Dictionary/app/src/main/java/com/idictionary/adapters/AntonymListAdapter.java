@@ -15,7 +15,7 @@ import com.idictionary.R;
 
 import java.util.List;
 
-public class AntonymListAdapter extends ArrayAdapter<String> {
+public class AntonymListAdapter extends ArrayAdapter<String> implements View.OnClickListener {
     private final Activity _activity;
     private final Context _context;
     private List<String> _synonymList;
@@ -36,9 +36,16 @@ public class AntonymListAdapter extends ArrayAdapter<String> {
     public View getView(int position, View view, @NonNull ViewGroup parent) {
         _inflater = _activity.getLayoutInflater();
         _rowView = _inflater.inflate(R.layout.dic_ant_result_row, null, false);
-        TextView synTextField = _rowView.findViewById(R.id.txtAntonym);
-        synTextField.setText(_synonymList.get(position));
+        TextView antText = _rowView.findViewById(R.id.txtAntonym);
+        antText.setOnClickListener(this);
+        antText.setText(_synonymList.get(position));
         return _rowView;
 
+    }
+
+    @Override
+    public void onClick(View view) {
+        View txtSearchEdit = _activity.findViewById(R.id.txtSearchEdit);
+        txtSearchEdit.getOnFocusChangeListener().onFocusChange(txtSearchEdit, false);
     }
 }
