@@ -18,9 +18,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.conn.HttpHostConnectException;
-
 
 public class DictionaryService {
     private static DictionaryService _svc;
@@ -59,30 +57,11 @@ public class DictionaryService {
         return _svc == null ? new DictionaryService(context, word) : _svc;
     }
 
-    private void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse, JsonHttpResponseHandler responseHandler) {
-        responseHandler.onFailure(statusCode, headers, throwable, errorResponse);
-    }
-
-    private void onFinish(JsonHttpResponseHandler responseHandler) {
-        responseHandler.onFinish();
-    }
-
-    private void onProgress(long bytesWritten, long totalSize, JsonHttpResponseHandler responseHandler) {
-        responseHandler.onProgress(bytesWritten, totalSize);
-    }
-
-    private void onStart(JsonHttpResponseHandler responseHandler) {
-        responseHandler.onStart();
-    }
-
-    private void onSuccess(int statusCode, Header[] headers, JSONObject response, JsonHttpResponseHandler responsehandler) {
-        responsehandler.onSuccess(statusCode, headers, response);
-    }
-
     public void GetDefinition(final JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException, JSONException {
         _fileName = "def." + _word + ".json";
         _defJson = _jsonCacher.readJsonFileData(_fileName);
         if (_defJson != null) {
+
             jsonResponseHandler.onSuccess(200, null, new JSONObject(_defJson));
             jsonResponseHandler.onFinish();
         } else {
@@ -96,6 +75,7 @@ public class DictionaryService {
 
     public void GetSynonym(JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException, JSONException {
         _fileName = "syn." + _word + ".json";
+        _synJson = _jsonCacher.readJsonFileData(_fileName);
         if (_synJson != null) {
             jsonResponseHandler.onSuccess(200, null, new JSONObject(_synJson));
             jsonResponseHandler.onFinish();
@@ -110,6 +90,7 @@ public class DictionaryService {
 
     public void GetAntonym(JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException, JSONException {
         _fileName = "ant." + _word + ".json";
+        _antJson = _jsonCacher.readJsonFileData(_fileName);
         if (_antJson != null) {
             jsonResponseHandler.onSuccess(200, null, new JSONObject(_antJson));
             jsonResponseHandler.onFinish();
@@ -124,13 +105,13 @@ public class DictionaryService {
 
     public void GetExample(JsonHttpResponseHandler jsonResponseHandler) throws HttpHostConnectException, JSONException {
         _fileName = "ex." + _word + ".json";
+        _exampleJson = _jsonCacher.readJsonFileData(_fileName);
         if (_exampleJson != null) {
             jsonResponseHandler.onSuccess(200, null, new JSONObject(_exampleJson));
             jsonResponseHandler.onFinish();
         } else {
             if (!isNetworkOnline())
                 throw new HttpHostConnectException(new IOException("No Internet Connection"), null);
-
             _currentResponseHandler = new MyJsonHttpResponseHandler(_context, jsonResponseHandler, _fileName);
             String url = this.populateUrl(_word, "examples");
             _httpClient.get(url, null, _currentResponseHandler);

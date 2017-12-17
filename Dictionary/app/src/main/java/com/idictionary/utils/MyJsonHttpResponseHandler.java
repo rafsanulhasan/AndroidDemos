@@ -45,6 +45,7 @@ public class MyJsonHttpResponseHandler extends JsonHttpResponseHandler {
         _fileName = fileName;
         _responseHandler = responseHandler;
         _cacher = new JsonCacher(context);
+        _json = _cacher.readJsonFileData(_fileName);
     }
 
     public MyJsonHttpResponseHandler(Context context, JsonHttpResponseHandler responseHandler, String fileName, boolean useRFC5179CompatibilityMode) {
@@ -52,6 +53,7 @@ public class MyJsonHttpResponseHandler extends JsonHttpResponseHandler {
         _fileName = fileName;
         _responseHandler = responseHandler;
         _cacher = new JsonCacher(context);
+        _json = _cacher.readJsonFileData(_fileName);
     }
 
     public MyJsonHttpResponseHandler(Context context, JsonHttpResponseHandler responseHandler, String fileName, String encoding, boolean useRFC5179CompatibilityMode) {
@@ -59,6 +61,7 @@ public class MyJsonHttpResponseHandler extends JsonHttpResponseHandler {
         _fileName = fileName;
         _responseHandler = responseHandler;
         _cacher = new JsonCacher(context);
+        _json = _cacher.readJsonFileData(_fileName);
     }
 
     @Override
@@ -90,8 +93,8 @@ public class MyJsonHttpResponseHandler extends JsonHttpResponseHandler {
     public void onStart() {
         if (_json != null)
             try {
-                this.onSuccess(200, null, new JSONObject(_json));
-                this.onFinish();
+                _responseHandler.onSuccess(200, null, new JSONObject(_json));
+                _responseHandler.onFinish();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
