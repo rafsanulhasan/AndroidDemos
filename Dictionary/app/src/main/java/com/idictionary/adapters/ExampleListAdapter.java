@@ -36,17 +36,9 @@ public class ExampleListAdapter extends ArrayAdapter<String> {
     public View getView(int position, View view, @NonNull ViewGroup parent) {
         _inflater = _activity.getLayoutInflater();
         _rowView = _inflater.inflate(R.layout.dic_example_result_row, null, false);
-
-        //this code gets references to objects in the listview_row.xml file
-        //_layout = _rowView.findViewById(R.id.dic_list);
-
-        //TextView meaningTextField = new TextView(_context);
-        //meaningTextField.setPadding(0, 5, 0, 5);
-        //meaningTextField.setMaxEms(10000);
         TextView synTextField = _rowView.findViewById(R.id.txtExample);
         //this code sets the values of the objects to values from the arrays
         synTextField.setText(_synonymList.get(position));
-        //_layout.addView(meaningTextField);
         return _rowView;
 
     }

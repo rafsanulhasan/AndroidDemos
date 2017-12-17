@@ -112,6 +112,12 @@ public class MainActivity
         arrayAdapter.notifyDataSetChanged();
     }
 
+    private void hideSoftKey(View view) {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null)
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+
     private void initAsyncHttpResponseHandler(final List<String> values, final ArrayAdapter<String> adapter, final ListView listView) {
         JsonHttpResponseHandler handler = new JsonHttpResponseHandler() {
             @Override
@@ -200,8 +206,7 @@ public class MainActivity
                 try {
                     final JSONArray definitions = response.getJSONArray("definitions");
                     for (int i = 0; i < definitions.length(); i++) {
-                        JSONObject def;
-                        def = definitions.getJSONObject(i);
+                        JSONObject def = definitions.getJSONObject(i);
                         String d = "";
                         if (def.has("partOfSpeech") && def.getString("partOfSpeech") != null)
                             d += "(" + def.getString("partOfSpeech") + ") ";
@@ -270,7 +275,6 @@ public class MainActivity
     @Override
     public void onClick(View view) {
         String searchText;
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         switch (view.getId()) {
             case id.btnSearch:
                 _mainContent.setVisibility(View.INVISIBLE);
@@ -305,8 +309,7 @@ public class MainActivity
                         }
                     }
                     _dicResultTab.setCurrentTab(_dicResultTab.getCurrentTab());
-                    if (imm != null)
-                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    this.hideSoftKey(view);
                 } catch (JSONException e) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                 } catch (HttpHostConnectException e) {
@@ -351,8 +354,7 @@ public class MainActivity
                         }
                     }
                     _dicResultTab.setCurrentTab(_dicResultTab.getCurrentTab());
-                    if (imm != null)
-                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    this.hideSoftKey(view);
                 } catch (HttpHostConnectException e) {
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 } catch (Exception e) {
@@ -549,7 +551,6 @@ public class MainActivity
 
     @Override
     public void onTabChanged(String s) {
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         String searchText = _lblSearchEdit.getText().toString();
         switch (s) {
             case "Antonym":
@@ -557,6 +558,7 @@ public class MainActivity
                     _service = DictionaryService.getInstance(this, searchText);
                     _antList.clear();
                     _service.GetAntonym(_antHandler);
+                    _antListAdapter.notifyDataSetChanged();
                 } catch (HttpHostConnectException e) {
                     String message = e.getMessage();
                     configureData(_antList, _antListAdapter, message);
@@ -574,7 +576,7 @@ public class MainActivity
                     _service.GetExample(_exampleHandler);
                 } catch (HttpHostConnectException e) {
                     String message = e.getMessage();
-                    configureData(_synList, _synListAdapter, message);
+                    configureData(_exampleList, _exampleListAdapter, message);
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 } catch (JSONException e) {
                     String message = e.getMessage();
