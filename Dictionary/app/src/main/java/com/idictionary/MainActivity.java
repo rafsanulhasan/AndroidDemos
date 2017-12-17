@@ -10,6 +10,7 @@ import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -61,6 +62,7 @@ public class MainActivity
     private View _mainLayout;
     private View _mainContent;
     private View _dictionaryContent;
+    private TextInputLayout _txtSearchEditLayout;
     private EditText _txtSearch;
     private EditText _txtSearchEdit;
     private TextView _lblSearchEdit;
@@ -274,6 +276,7 @@ public class MainActivity
 
     @Override
     public void onClick(View view) {
+        hideSoftKey(view);
         String searchText;
         switch (view.getId()) {
             case id.btnSearch:
@@ -319,6 +322,7 @@ public class MainActivity
             case id.btnSearchEdit:
                 searchText = _txtSearchEdit.getText().toString();
 
+                _txtSearchEditLayout.setVisibility(View.INVISIBLE);
                 _txtSearchEdit.setVisibility(View.INVISIBLE);
                 view.setVisibility(View.INVISIBLE);
 
@@ -367,10 +371,11 @@ public class MainActivity
                 break;
             case id.lblSearchEdit:
                 view.setVisibility(View.INVISIBLE);
-                _txtSearchEdit.setVisibility(View.VISIBLE);
-                _txtSearchEdit.onHoverChanged(true);
-                _btnSearchEdit.setVisibility(View.VISIBLE);
                 _btnSpeak.setVisibility(View.INVISIBLE);
+                _txtSearchEditLayout.setVisibility(View.VISIBLE);
+                _txtSearchEdit.setVisibility(View.VISIBLE);
+                _btnSearchEdit.setVisibility(View.VISIBLE);
+                _txtSearchEdit.onHoverChanged(true);
                 break;
         }
     }
@@ -388,6 +393,7 @@ public class MainActivity
         _mainContent = findViewById(id.contentMain);
         _dictionaryContent = findViewById(id.contentDictionary);
         _txtSearch = findViewById(id.txtSearch);
+        _txtSearchEditLayout = findViewById(id.txtSearchEditLayout);
         _lblSearchEdit = findViewById(id.lblSearchEdit);
         _txtSearchEdit = findViewById(id.txtSearchEdit);
         _btnSearch = findViewById(id.btnSearch);
