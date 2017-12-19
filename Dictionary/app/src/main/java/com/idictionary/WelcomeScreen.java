@@ -26,7 +26,7 @@ public class WelcomeScreen extends AppCompatActivity {
 
     private void showMain(@Nullable Integer milliSeconds) {
         new Handler().postDelayed(() -> {
-            Intent intent = new Intent(WelcomeScreen.this, MainActivity.class);
+            Intent intent = new Intent(WelcomeScreen.this, MainActivityVolley.class);
             startActivity(intent);
         }, milliSeconds == null ? 500 : milliSeconds);
     }

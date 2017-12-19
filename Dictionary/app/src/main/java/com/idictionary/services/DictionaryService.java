@@ -53,7 +53,7 @@ public class DictionaryService {
         this.setRequestHeaders();
     }
 
-    public static DictionaryService getInstance(Context context, String word) {
+    public static synchronized DictionaryService getInstance(Context context, String word) {
         return _svc == null ? new DictionaryService(context, word) : _svc;
     }
 
