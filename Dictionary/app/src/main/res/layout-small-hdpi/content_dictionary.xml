@@ -18,8 +18,8 @@
         <TextView
             android:id="@+id/lblSearchEdit"
             style="@android:style/Widget.Material.TextView"
-            android:layout_width="294dp"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
             android:layout_margin="8dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
@@ -33,15 +33,15 @@
             android:visibility="visible"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.16"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.017" />
+            app:layout_constraintVertical_bias="0.0" />
 
         <android.support.design.widget.TextInputLayout
             android:id="@+id/txtSearchEditLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="25dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
@@ -72,7 +72,7 @@
             android:id="@+id/btnSearchEdit"
             style="@android:style/Widget.Material.Light.Button.Borderless"
             android:layout_width="30dp"
-            android:layout_height="29dp"
+            android:layout_height="24dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
@@ -92,7 +92,7 @@
             android:id="@+id/btnSpeak"
             style="@android:style/Widget.Material.Light.Button.Borderless"
             android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_height="24dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
@@ -124,7 +124,7 @@
             android:id="@+id/dicResultTab"
             style="@android:style/TextAppearance.Material.Small"
             android:layout_width="match_parent"
-            android:layout_height="709dp"
+            android:layout_height="89dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
@@ -146,8 +146,8 @@
                 <TabWidget
                     android:id="@android:id/tabs"
                     style="@android:style/Widget.Material.Light.TabWidget"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_width="181dp"
+                    android:layout_height="26dp"
                     android:orientation="horizontal"
                     android:textAlignment="center">
 

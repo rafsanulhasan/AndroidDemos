@@ -18,7 +18,7 @@
         <TextView
             android:id="@+id/lblSearchEdit"
             style="@android:style/Widget.Material.TextView"
-            android:layout_width="294dp"
+            android:layout_width="317dp"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
             android:layout_marginBottom="8dp"
@@ -124,7 +124,7 @@
             android:id="@+id/dicResultTab"
             style="@android:style/TextAppearance.Material.Small"
             android:layout_width="match_parent"
-            android:layout_height="454dp"
+            android:layout_height="707dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
